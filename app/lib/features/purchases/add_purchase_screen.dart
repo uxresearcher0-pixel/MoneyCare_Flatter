@@ -342,7 +342,7 @@ class _MiniField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -352,7 +352,7 @@ class _MiniField extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label, style: AppTextStyles.captionMedium.copyWith(color: AppColors.textSecondary)),
-          const SizedBox(height: 2),
+          const SizedBox(height: 6),
           TextField(
             controller: controller,
             onChanged: onChanged,
@@ -361,9 +361,11 @@ class _MiniField extends StatelessWidget {
             decoration: InputDecoration(
               border: InputBorder.none,
               isDense: true,
-              contentPadding: EdgeInsets.zero,
+              contentPadding: const EdgeInsets.symmetric(vertical: 6),
               prefixText: prefix,
+              prefixStyle: AppTextStyles.bodySmallBold.copyWith(color: AppColors.textSecondary),
               suffixText: suffix,
+              suffixStyle: AppTextStyles.captionMedium.copyWith(color: AppColors.textSecondary),
             ),
           ),
         ],

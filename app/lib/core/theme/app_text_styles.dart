@@ -17,7 +17,13 @@ class AppTextStyles {
       fontWeight: weight,
       height: height,
       color: color,
-    );
+      // Inter has no Bengali glyphs, so the ৳ (Bangladeshi Taka) sign used
+      // throughout the app needs an explicit fallback family or it renders
+      // as a tofu box wherever the platform doesn't already pick one on its
+      // own. Noto Sans Bengali is Google's canonical font for that script.
+      // (GoogleFonts.inter() itself has no fontFamilyFallback parameter, so
+      // it's applied via copyWith on the TextStyle it returns.)
+    ).copyWith(fontFamilyFallback: const ['Noto Sans Bengali', 'Noto Sans Symbols']);
   }
 
   // Display / headings
