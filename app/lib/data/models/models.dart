@@ -41,6 +41,7 @@ class Project {
     List<String>? memberIds,
     List<String>? periodIds,
     this.activePeriodId,
+    this.isArchived = false,
   })  : memberIds = List<String>.of(memberIds ?? const []),
         periodIds = List<String>.of(periodIds ?? const []);
 
@@ -52,6 +53,7 @@ class Project {
   List<String> memberIds;
   List<String> periodIds;
   String? activePeriodId;
+  bool isArchived;
 }
 
 /// A person participating in a project (contributor / member).
@@ -142,4 +144,23 @@ class AppTransaction {
   String note;
   String? unit;
   num? quantity;
+}
+
+/// An in-app notification shown in the notifications inbox.
+class AppNotification {
+  AppNotification({
+    required this.id,
+    required this.title,
+    required this.body,
+    required this.time,
+    this.icon = Icons.notifications_rounded,
+    this.read = false,
+  });
+
+  final String id;
+  final String title;
+  final String body;
+  final DateTime time;
+  final IconData icon;
+  bool read;
 }

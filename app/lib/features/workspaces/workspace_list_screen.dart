@@ -8,7 +8,7 @@ import '../../core/widgets/cards.dart';
 import '../../data/providers/app_data.dart';
 
 /// 03 Workspaces / Workspace List — Populated
-class WorkspaceListScreen extends ConsumerWidget {
+class WorkspaceListScreen extends ConsumerStatefulWidget {
   const WorkspaceListScreen({super.key, this.embedded = false});
 
   /// When true, this screen is hosted inside [HomeShell]'s tab bar and
@@ -16,11 +16,22 @@ class WorkspaceListScreen extends ConsumerWidget {
   final bool embedded;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WorkspaceListScreen> createState() => _WorkspaceListScreenState();
+}
+
+class _WorkspaceListScreenState extends ConsumerState<WorkspaceListScreen> {
+  final _search = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
     final appData = ref.watch(appDataProvider);
-    final workspaces = appData.workspaces.values.toList();
+    final allWorkspaces = appData.workspaces.values.toList();
+    final query = _search.text.trim().toLowerCase();
+    final workspaces = query.isEmpty
+        ? allWorkspaces
+        : allWorkspaces.where((w) => w.name.toLowerCase().contains(query)).toList();
     final activeProjectCount =
-        workspaces.fold<int>(0, (sum, w) => sum + w.projectIds.length);
+        allWorkspaces.fold<int>(0, (sum, w) => sum + w.projectIds.length);
 
     return Scaffold(
       appBar: AppBar(
@@ -37,6 +48,8 @@ class WorkspaceListScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         children: [
           TextField(
+            controller: _search,
+            onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
               hintText: 'Search workspaces...',
               prefixIcon: const Icon(Icons.search_rounded, size: 20),
@@ -59,7 +72,7 @@ class WorkspaceListScreen extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('${workspaces.length} workspaces', style: AppTextStyles.labelSemibold),
+                Text('${allWorkspaces.length} workspaces', style: AppTextStyles.labelSemibold),
                 Text(
                   '$activeProjectCount active projects',
                   style: AppTextStyles.captionMedium.copyWith(color: AppColors.actionPrimary),
@@ -68,57 +81,68 @@ class WorkspaceListScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 12),
-          for (final ws in workspaces)
+          if (workspaces.isEmpty)
             Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: AppCard(
-                padding: const EdgeInsets.all(14),
-                onTap: () {
-                  appData.setActiveWorkspace(ws.id);
-                  context.push('/workspace/${ws.id}');
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const AppAvatar(
-                          icon: Icons.family_restroom_rounded,
-                          size: 44,
-                          shape: BoxShape.rectangle,
-                          background: AppColors.surfaceSubtle,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(ws.name, style: AppTextStyles.bodyLargeSemibold.copyWith(fontSize: 16)),
-                              Text(
-                                '${ws.memberCount} members',
-                                style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '${ws.projectIds.length} active projects',
-                          style: AppTextStyles.captionMedium.copyWith(color: AppColors.textSecondary),
-                        ),
-                        StatusBadge.neutral('Owner'),
-                      ],
-                    ),
-                  ],
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Center(
+                child: Text(
+                  'No workspaces match "$query"',
+                  style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                 ),
               ),
-            ),
+            )
+          else
+            for (final ws in workspaces)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: AppCard(
+                  padding: const EdgeInsets.all(14),
+                  onTap: () {
+                    appData.setActiveWorkspace(ws.id);
+                    context.push('/workspace/${ws.id}');
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const AppAvatar(
+                            icon: Icons.family_restroom_rounded,
+                            size: 44,
+                            shape: BoxShape.rectangle,
+                            background: AppColors.surfaceSubtle,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(ws.name, style: AppTextStyles.bodyLargeSemibold.copyWith(fontSize: 16)),
+                                Text(
+                                  '${ws.memberCount} members',
+                                  style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${ws.projectIds.length} active projects',
+                            style: AppTextStyles.captionMedium.copyWith(color: AppColors.textSecondary),
+                          ),
+                          StatusBadge.neutral('Owner'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
         ],
       ),
     );

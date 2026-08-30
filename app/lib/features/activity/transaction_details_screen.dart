@@ -117,7 +117,7 @@ class TransactionDetailsScreen extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () => _editTransaction(context, appData, t),
                         icon: const Icon(Icons.edit_outlined, size: 16),
                         label: const Text('Edit'),
                         style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(40)),
@@ -126,7 +126,13 @@ class TransactionDetailsScreen extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          final copy = appData.duplicateTransaction(t.id);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Duplicated as a new transaction today')),
+                          );
+                          context.pushReplacement('/transaction/${copy.id}');
+                        },
                         icon: const Icon(Icons.content_copy_rounded, size: 15),
                         label: const Text('Duplicate'),
                         style: OutlinedButton.styleFrom(
@@ -160,6 +166,46 @@ class TransactionDetailsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+void _editTransaction(BuildContext context, AppData appData, AppTransaction t) {
+  final titleController = TextEditingController(text: t.title);
+  final amountController = TextEditingController(text: t.amount.toString());
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Edit transaction'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: titleController,
+            decoration: const InputDecoration(labelText: 'Title'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: amountController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(labelText: 'Amount', prefixText: '৳'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () {
+            appData.updateTransaction(
+              t.id,
+              title: titleController.text.trim().isEmpty ? null : titleController.text.trim(),
+              amount: num.tryParse(amountController.text),
+            );
+            Navigator.pop(context);
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  );
 }
 
 class _MetaRow extends StatelessWidget {

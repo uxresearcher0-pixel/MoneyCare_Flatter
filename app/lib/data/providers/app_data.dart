@@ -42,11 +42,14 @@ class AppData extends ChangeNotifier {
     return periods[project!.activePeriodId];
   }
 
-  List<Project> projectsInWorkspace(String workspaceId) {
+  List<Project> projectsInWorkspace(String workspaceId, {bool includeArchived = false}) {
     final ws = workspaces[workspaceId];
     if (ws == null) return [];
-    return ws.projectIds.map((id) => projects[id]!).toList();
+    final list = ws.projectIds.map((id) => projects[id]!);
+    return (includeArchived ? list : list.where((p) => !p.isArchived)).toList();
   }
+
+  List<Project> get archivedProjects => projects.values.where((p) => p.isArchived).toList();
 
   List<Person> peopleInProject(String projectId) {
     final project = projects[projectId];
@@ -290,12 +293,164 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateTransaction(
+    String id, {
+    String? title,
+    num? amount,
+    String? categoryId,
+    String? note,
+  }) {
+    final t = transactions[id];
+    if (t == null) return;
+    if (title != null) t.title = title;
+    if (amount != null) t.amount = amount;
+    if (categoryId != null) t.categoryId = categoryId;
+    if (note != null) t.note = note;
+    notifyListeners();
+  }
+
+  AppTransaction duplicateTransaction(String id) {
+    final t = transactions[id]!;
+    final copy = AppTransaction(
+      id: _uuid.v4(),
+      periodId: t.periodId,
+      type: t.type,
+      title: t.title,
+      amount: t.amount,
+      date: DateTime.now(),
+      categoryId: t.categoryId,
+      personId: t.personId,
+      contributionType: t.contributionType,
+      note: t.note,
+      unit: t.unit,
+      quantity: t.quantity,
+    );
+    transactions[copy.id] = copy;
+    notifyListeners();
+    return copy;
+  }
+
   Category addCategory(String name, IconData icon) {
     final cat = Category(id: _uuid.v4(), name: name, icon: icon);
     categories[cat.id] = cat;
     notifyListeners();
     return cat;
   }
+
+  void deleteCategory(String id) {
+    categories.remove(id);
+    notifyListeners();
+  }
+
+  void renameCategory(String id, String name) {
+    final existing = categories[id];
+    if (existing == null) return;
+    categories[id] = Category(id: existing.id, name: name, icon: existing.icon, budget: existing.budget);
+    notifyListeners();
+  }
+
+  void removePersonFromProject(String projectId, String personId) {
+    projects[projectId]?.memberIds.remove(personId);
+    notifyListeners();
+  }
+
+  void archiveProject(String id) {
+    final project = projects[id];
+    if (project == null) return;
+    project.isArchived = true;
+    if (activeProjectId == id) {
+      final ws = workspaces[project.workspaceId];
+      activeProjectId = ws?.projectIds.firstWhere(
+        (pid) => pid != id && !(projects[pid]?.isArchived ?? false),
+        orElse: () => '',
+      );
+      if (activeProjectId == '') activeProjectId = null;
+    }
+    notifyListeners();
+  }
+
+  void unarchiveProject(String id) {
+    final project = projects[id];
+    if (project == null) return;
+    project.isArchived = false;
+    notifyListeners();
+  }
+
+  void updatePeriodBudget(String periodId, num amount) {
+    final period = periods[periodId];
+    if (period == null) return;
+    period.monthlyBudget = amount;
+    notifyListeners();
+  }
+
+  void closePeriod(String periodId) {
+    final period = periods[periodId];
+    if (period == null) return;
+    period.isActive = false;
+    notifyListeners();
+  }
+
+  // ---- Preferences -----------------------------------------------------
+
+  ThemeMode themeMode = ThemeMode.system;
+
+  void setThemeMode(ThemeMode mode) {
+    themeMode = mode;
+    notifyListeners();
+  }
+
+  String currencyCode = 'BDT';
+  String currencySymbol = '৳';
+  String language = 'English';
+
+  void setCurrency(String code, String symbol) {
+    currencyCode = code;
+    currencySymbol = symbol;
+    notifyListeners();
+  }
+
+  void setLanguage(String value) {
+    language = value;
+    notifyListeners();
+  }
+
+  bool pushNotificationsEnabled = true;
+  bool emailNotificationsEnabled = false;
+  bool budgetAlertsEnabled = true;
+  bool biometricLockEnabled = false;
+
+  void setPreference({
+    bool? push,
+    bool? email,
+    bool? budgetAlerts,
+    bool? biometricLock,
+  }) {
+    if (push != null) pushNotificationsEnabled = push;
+    if (email != null) emailNotificationsEnabled = email;
+    if (budgetAlerts != null) budgetAlertsEnabled = budgetAlerts;
+    if (biometricLock != null) biometricLockEnabled = biometricLock;
+    notifyListeners();
+  }
+
+  // ---- Notifications -----------------------------------------------------
+
+  final List<AppNotification> notifications = [];
+
+  void markNotificationRead(String id) {
+    for (final n in notifications) {
+      if (n.id == id) n.read = true;
+    }
+    notifyListeners();
+  }
+
+  void markAllNotificationsRead() {
+    for (final n in notifications) {
+      n.read = true;
+    }
+    notifyListeners();
+  }
+
+  int get unreadNotificationCount => notifications.where((n) => !n.read).length;
 
   // ---- Seed data -------------------------------------------------------
 
@@ -424,6 +579,31 @@ class AppData extends ChangeNotifier {
     contribution('p3', 4011, 'Regular', DateTime(2026, 8, 1));
     contribution('p4', 3500, 'Occasion', DateTime(2026, 8, 1));
     contribution('p1', 5440, 'Regular', DateTime(2026, 8, 1));
+
+    notifications.addAll([
+      AppNotification(
+        id: _uuid.v4(),
+        title: 'Budget 70% used — Utility',
+        body: 'Utility category has used 70% of its ৳4,000 budget this period.',
+        time: now,
+        icon: Icons.bolt_rounded,
+      ),
+      AppNotification(
+        id: _uuid.v4(),
+        title: 'Abbu added a contribution',
+        body: '৳4,000 regular contribution logged for Monthly Grocery.',
+        time: now.subtract(const Duration(hours: 3)),
+        icon: Icons.arrow_downward_rounded,
+      ),
+      AppNotification(
+        id: _uuid.v4(),
+        title: 'Weekly summary is ready',
+        body: 'Spending is 12% lower than last week — view the full report.',
+        time: now.subtract(const Duration(days: 1)),
+        icon: Icons.bar_chart_rounded,
+        read: true,
+      ),
+    ]);
   }
 }
 

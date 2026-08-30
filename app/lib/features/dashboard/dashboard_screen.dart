@@ -36,6 +36,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           userInitial: appData.currentUser.initial,
           greeting: 'Good morning, ${appData.currentUser.firstName}',
           subtitle: 'No workspace yet',
+          hasNotification: appData.unreadNotificationCount > 0,
+          onNotificationTap: () => context.push('/notifications'),
         ),
         body: EmptyState(
           icon: Icons.workspaces_outlined,
@@ -53,6 +55,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
           userInitial: appData.currentUser.initial,
           greeting: 'Good morning, ${appData.currentUser.firstName}',
           subtitle: workspace.name,
+          hasNotification: appData.unreadNotificationCount > 0,
+          onNotificationTap: () => context.push('/notifications'),
         ),
         body: EmptyState(
           icon: Icons.folder_open_rounded,
@@ -79,7 +83,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         userInitial: appData.currentUser.initial,
         greeting: 'Good morning, ${appData.currentUser.firstName}',
         subtitle: workspace.name,
-        onNotificationTap: () {},
+        hasNotification: appData.unreadNotificationCount > 0,
+        onNotificationTap: () => context.push('/notifications'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),

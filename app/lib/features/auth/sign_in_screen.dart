@@ -45,7 +45,10 @@ class SignInScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: LinkButton(label: 'Forgot password?', onPressed: () {}),
+                    child: LinkButton(
+                      label: 'Forgot password?',
+                      onPressed: () => _showForgotPasswordDialog(context),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   PrimaryButton(
@@ -93,4 +96,45 @@ class SignInScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+void _showForgotPasswordDialog(BuildContext context) {
+  final controller = TextEditingController();
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Reset password'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("We'll send a reset link to your email."),
+          const SizedBox(height: 12),
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(hintText: 'name@example.com'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  controller.text.trim().isEmpty
+                      ? 'Enter an email address first'
+                      : 'Reset link sent to ${controller.text.trim()}',
+                ),
+              ),
+            );
+          },
+          child: const Text('Send link'),
+        ),
+      ],
+    ),
+  );
 }

@@ -50,6 +50,7 @@ class MoreHubScreen extends ConsumerWidget {
         children: [
           AppCard(
             color: AppColors.surfaceSubtle,
+            onTap: () => context.push('/workspaces'),
             child: Row(
               children: [
                 AppAvatar(label: appData.currentUser.initial, size: 46, background: AppColors.actionPrimary, foreground: Colors.white),

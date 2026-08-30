@@ -27,7 +27,7 @@ class AppBottomNav extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 60,
+          height: 64,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -88,14 +88,19 @@ class _NavTab extends StatelessWidget {
       child: SizedBox(
         width: 60,
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(icon, size: 20, color: color),
             const SizedBox(height: 2),
             Text(
               label,
+              // Explicit height (rather than inheriting AppTextStyles.caption's
+              // 1.4) keeps this label from overflowing the fixed-height nav
+              // bar when the Inter font hasn't loaded yet and a taller
+              // fallback font's metrics are used instead.
               style: (selected ? AppTextStyles.captionSemibold : AppTextStyles.caption)
-                  .copyWith(color: color),
+                  .copyWith(color: color, height: 1.0),
             ),
           ],
         ),

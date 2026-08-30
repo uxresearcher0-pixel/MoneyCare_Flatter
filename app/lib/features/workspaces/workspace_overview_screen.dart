@@ -109,14 +109,26 @@ class WorkspaceOverviewScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Projects', style: AppTextStyles.bodyMediumSemibold),
-                LinkButton(
-                  label: '+ New project',
-                  onPressed: () => context.push('/project/create?workspaceId=$workspaceId'),
+                Row(
+                  children: [
+                    if (projects.length > 3) ...[
+                      LinkButton(
+                        label: 'View all',
+                        color: AppColors.textSecondary,
+                        onPressed: () => context.push('/workspace/$workspaceId/projects'),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    LinkButton(
+                      label: '+ New project',
+                      onPressed: () => context.push('/project/create?workspaceId=$workspaceId'),
+                    ),
+                  ],
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            for (final project in projects)
+            for (final project in projects.take(3))
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: AppCard(

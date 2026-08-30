@@ -34,6 +34,29 @@ class CategoriesScreen extends ConsumerWidget {
     );
   }
 
+  void _renameCategory(BuildContext context, WidgetRef ref, String id, String currentName) {
+    final controller = TextEditingController(text: currentName);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Rename category'),
+        content: TextField(controller: controller, autofocus: true),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                ref.read(appDataProvider).renameCategory(id, controller.text.trim());
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appData = ref.watch(appDataProvider);
@@ -55,14 +78,26 @@ class CategoriesScreen extends ConsumerWidget {
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) {
           final c = categories[i];
-          return AppCard(
-            child: Row(
-              children: [
-                AppAvatar(icon: c.icon, size: 32),
-                const SizedBox(width: 12),
-                Expanded(child: Text(c.name, style: AppTextStyles.labelSemibold)),
-                const Icon(Icons.drag_handle_rounded, color: AppColors.textSecondary),
-              ],
+          return Dismissible(
+            key: ValueKey(c.id),
+            direction: DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              decoration: BoxDecoration(color: AppColors.statusNegativeBg, borderRadius: BorderRadius.circular(8)),
+              child: const Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
+            ),
+            onDismissed: (_) => appData.deleteCategory(c.id),
+            child: AppCard(
+              onTap: () => _renameCategory(context, ref, c.id, c.name),
+              child: Row(
+                children: [
+                  AppAvatar(icon: c.icon, size: 32),
+                  const SizedBox(width: 12),
+                  Expanded(child: Text(c.name, style: AppTextStyles.labelSemibold)),
+                  const Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
+                ],
+              ),
             ),
           );
         },

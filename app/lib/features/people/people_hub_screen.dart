@@ -21,6 +21,7 @@ class PeopleHubScreen extends ConsumerStatefulWidget {
 class _PeopleHubScreenState extends ConsumerState<PeopleHubScreen> {
   int _tab = 0; // 0 = People, 1 = Contributions
   String _filter = 'All';
+  final _search = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +29,13 @@ class _PeopleHubScreenState extends ConsumerState<PeopleHubScreen> {
     final project = appData.activeProject;
     final period = appData.activePeriod;
     final people = project != null ? appData.peopleInProject(project.id) : appData.people.values.toList();
+    final query = _search.text.trim().toLowerCase();
     final filtered = people.where((p) {
+      if (query.isNotEmpty && !p.name.toLowerCase().contains(query)) return false;
       if (_filter == 'All') return true;
       if (_filter == 'Owners') return p.isOwner;
       if (_filter == 'Contributors') return p.contributionType.isNotEmpty && !p.isOwner;
+      if (_filter == 'Members') return !p.isOwner;
       return true;
     }).toList();
 
@@ -83,6 +87,8 @@ class _PeopleHubScreenState extends ConsumerState<PeopleHubScreen> {
           const SizedBox(height: 12),
           if (_tab == 0) ...[
             TextField(
+              controller: _search,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: 'Search name...',
                 prefixIcon: const Icon(Icons.search_rounded, size: 18),

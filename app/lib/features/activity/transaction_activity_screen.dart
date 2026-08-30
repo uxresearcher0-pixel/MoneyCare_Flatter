@@ -21,6 +21,15 @@ class TransactionActivityScreen extends ConsumerStatefulWidget {
 
 class _TransactionActivityScreenState extends ConsumerState<TransactionActivityScreen> {
   String _filter = 'All';
+  final _search = TextEditingController();
+  final _searchFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _search.dispose();
+    _searchFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +40,10 @@ class _TransactionActivityScreenState extends ConsumerState<TransactionActivityS
       items = items.where((t) => t.type == TransactionType.purchase).toList();
     } else if (_filter == 'Contributions') {
       items = items.where((t) => t.type == TransactionType.contribution).toList();
+    }
+    final query = _search.text.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      items = items.where((t) => t.title.toLowerCase().contains(query)).toList();
     }
 
     final grouped = <String, List<AppTransaction>>{};
@@ -44,10 +57,13 @@ class _TransactionActivityScreenState extends ConsumerState<TransactionActivityS
         title: const Text('Activity'),
         titleTextStyle: AppTextStyles.h2,
         actions: [
-          IconButton(icon: const Icon(Icons.search_rounded), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () => _searchFocus.requestFocus(),
+          ),
         ],
       ),
-      body: items.isEmpty
+      body: (items.isEmpty && query.isEmpty)
           ? const EmptyState(
               icon: Icons.schedule_rounded,
               title: 'No activity yet',
@@ -57,6 +73,9 @@ class _TransactionActivityScreenState extends ConsumerState<TransactionActivityS
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 90),
               children: [
                 TextField(
+                  controller: _search,
+                  focusNode: _searchFocus,
+                  onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     hintText: 'Search transactions...',
                     prefixIcon: const Icon(Icons.search_rounded, size: 18),
@@ -69,6 +88,16 @@ class _TransactionActivityScreenState extends ConsumerState<TransactionActivityS
                   ),
                 ),
                 const SizedBox(height: 12),
+                if (items.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 24),
+                    child: Center(
+                      child: Text(
+                        'No transactions match "$query"',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ),
+                  ),
                 Wrap(
                   spacing: 8,
                   children: ['All', 'Purchases', 'Contributions']

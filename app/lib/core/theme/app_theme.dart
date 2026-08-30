@@ -123,4 +123,33 @@ class AppTheme {
       ),
     );
   }
+
+  /// Money Care's screens are hand-styled directly from the Figma light
+  /// palette (via [AppColors]) rather than `Theme.of(context)`, so this dark
+  /// theme intentionally only reskins the *native* Material surfaces that do
+  /// read from the app theme — dialogs, snackbars, menus, switches, the
+  /// system nav/status bar chrome — for a Dark/System appearance choice.
+  /// It does not repaint the custom-built screens themselves.
+  static ThemeData get dark {
+    final base = ThemeData(
+      useMaterial3: true,
+      brightness: Brightness.dark,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: AppColors.actionPrimary,
+        brightness: Brightness.dark,
+      ),
+      fontFamily: AppTextStyles.bodyMedium.fontFamily,
+    );
+    return base.copyWith(
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.actionPrimary,
+          foregroundColor: AppColors.textInverse,
+          minimumSize: const Size.fromHeight(52),
+          textStyle: AppTextStyles.bodyLargeSemibold,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
+        ),
+      ),
+    );
+  }
 }

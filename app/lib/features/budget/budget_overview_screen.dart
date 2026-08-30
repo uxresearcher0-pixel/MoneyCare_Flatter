@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/cards.dart';
 import '../../core/widgets/top_bar.dart';
+import '../../data/models/models.dart';
 import '../../data/providers/app_data.dart';
 
 /// 13 Budget / Budget Overview — On Track
@@ -33,6 +35,8 @@ class BudgetOverviewScreen extends ConsumerWidget {
         userInitial: appData.currentUser.initial,
         greeting: 'Budget',
         subtitle: appData.activeWorkspace?.name ?? '',
+        hasNotification: appData.unreadNotificationCount > 0,
+        onNotificationTap: () => context.push('/notifications'),
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -202,9 +206,19 @@ class BudgetOverviewScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(child: OutlinedButton(onPressed: () {}, child: const Text('Edit Budget'))),
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => _editBudget(context, appData, period),
+                  child: const Text('Edit Budget'),
+                ),
+              ),
               const SizedBox(width: 8),
-              Expanded(child: FilledButton(onPressed: () {}, child: const Text('Add Category'))),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => _addCategory(context, appData),
+                  child: const Text('Add Category'),
+                ),
+              ),
             ],
           ),
         ],
@@ -280,4 +294,54 @@ class _CategoryBudgetRow extends StatelessWidget {
       ],
     );
   }
+}
+
+void _editBudget(BuildContext context, AppData appData, Period period) {
+  final controller = TextEditingController(text: period.monthlyBudget.round().toString());
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Edit monthly budget'),
+      content: TextField(
+        controller: controller,
+        autofocus: true,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: const InputDecoration(prefixText: '৳', labelText: 'Monthly budget'),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () {
+            final amount = num.tryParse(controller.text);
+            if (amount != null) appData.updatePeriodBudget(period.id, amount);
+            Navigator.pop(context);
+          },
+          child: const Text('Save'),
+        ),
+      ],
+    ),
+  );
+}
+
+void _addCategory(BuildContext context, AppData appData) {
+  final controller = TextEditingController();
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('New category'),
+      content: TextField(controller: controller, autofocus: true, decoration: const InputDecoration(hintText: 'Category name')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(
+          onPressed: () {
+            if (controller.text.trim().isNotEmpty) {
+              appData.addCategory(controller.text.trim(), Icons.label_rounded);
+            }
+            Navigator.pop(context);
+          },
+          child: const Text('Add'),
+        ),
+      ],
+    ),
+  );
 }

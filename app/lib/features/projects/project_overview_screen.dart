@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/cards.dart';
+import '../../data/models/models.dart';
 import '../../data/providers/app_data.dart';
 import '../dashboard/widgets/dashboard_widgets.dart';
 
@@ -24,7 +26,58 @@ class _ProjectOverviewScreenState extends ConsumerState<ProjectOverviewScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController = TabController(length: 4, vsync: this);
 
-  void _openActionsSheet() {
+  void _shareProject(Project project) {
+    Share.share('Track "${project.name}" with me on Money Care!');
+  }
+
+  Future<void> _confirmClosePeriod(AppData appData, Period period) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Close this period?'),
+        content: Text(
+          '${period.label} will be marked closed. You can still view its history, but new purchases and contributions should go in a new period.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Close period')),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      appData.closePeriod(period.id);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${period.label} closed')));
+      }
+    }
+  }
+
+  Future<void> _confirmArchive(AppData appData, Project project) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Archive this project?'),
+        content: Text('"${project.name}" will move to Archive. You can restore it any time.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: AppColors.statusNegative),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Archive'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      appData.archiveProject(project.id);
+      if (mounted) {
+        context.go('/home');
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('"${project.name}" archived')));
+      }
+    }
+  }
+
+  void _openActionsSheet(AppData appData, Project project, Period? period) {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
@@ -52,15 +105,23 @@ class _ProjectOverviewScreenState extends ConsumerState<ProjectOverviewScreen>
               ),
             ),
             const Divider(height: 1),
-            _ActionRow(icon: Icons.file_upload_outlined, label: 'Export Data', onTap: () {}),
-            _ActionRow(icon: Icons.schedule_outlined, label: 'Close Period', onTap: () {}),
-            _ActionRow(icon: Icons.edit_outlined, label: 'Settings', onTap: () {}),
-            _ActionRow(icon: Icons.share_outlined, label: 'Share', onTap: () {}),
+            _ActionRow(
+              icon: Icons.file_upload_outlined,
+              label: 'Export Data',
+              onTap: () => context.push('/more/import-export'),
+            ),
+            _ActionRow(
+              icon: Icons.schedule_outlined,
+              label: 'Close Period',
+              onTap: period == null ? () {} : () => _confirmClosePeriod(appData, period),
+            ),
+            _ActionRow(icon: Icons.edit_outlined, label: 'Settings', onTap: () => context.push('/settings')),
+            _ActionRow(icon: Icons.share_outlined, label: 'Share', onTap: () => _shareProject(project)),
             _ActionRow(
               icon: Icons.archive_outlined,
               label: 'Archive Project',
               color: AppColors.statusNegative,
-              onTap: () {},
+              onTap: () => _confirmArchive(appData, project),
             ),
             const Divider(height: 1),
             Padding(
@@ -99,8 +160,11 @@ class _ProjectOverviewScreenState extends ConsumerState<ProjectOverviewScreen>
         title: Text(project.name),
         titleTextStyle: AppTextStyles.h3,
         actions: [
-          IconButton(icon: const Icon(Icons.share_outlined), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.more_horiz_rounded), onPressed: _openActionsSheet),
+          IconButton(icon: const Icon(Icons.share_outlined), onPressed: () => _shareProject(project)),
+          IconButton(
+            icon: const Icon(Icons.more_horiz_rounded),
+            onPressed: () => _openActionsSheet(appData, project, period),
+          ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(80),

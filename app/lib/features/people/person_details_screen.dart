@@ -186,11 +186,39 @@ class PersonDetailsScreen extends ConsumerWidget {
             onPressed: () => context.push('/contribution/add'),
           ),
           const SizedBox(height: 8),
-          SecondaryButton(label: 'Edit Person', radius: 8, onPressed: () {}),
+          SecondaryButton(
+            label: 'Edit Person',
+            radius: 8,
+            onPressed: appData.activeProject == null
+                ? null
+                : () => context.push('/project/${appData.activeProject!.id}/people/$personId/setup'),
+          ),
           const SizedBox(height: 8),
           Center(
             child: TextButton(
-              onPressed: () {},
+              onPressed: appData.activeProject == null
+                  ? null
+                  : () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Remove from project?'),
+                          content: Text('${person.name} will lose access to this project. This cannot be undone.'),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+                            TextButton(
+                              style: TextButton.styleFrom(foregroundColor: AppColors.statusNegative),
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Remove'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true) {
+                        appData.removePersonFromProject(appData.activeProject!.id, personId);
+                        if (context.mounted) context.pop();
+                      }
+                    },
               child: Text(
                 'Remove from Project',
                 style: AppTextStyles.bodySmallSemibold.copyWith(color: AppColors.statusNegative),

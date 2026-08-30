@@ -97,7 +97,12 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
                   const SizedBox(width: 8),
                   Text('Create Project', style: AppTextStyles.h3),
                   const Spacer(),
-                  Text('Save Draft', style: AppTextStyles.bodySmallSemibold.copyWith(color: AppColors.actionPrimary)),
+                  TextButton(
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Draft saved — pick up where you left off any time')),
+                    ),
+                    child: Text('Save Draft', style: AppTextStyles.bodySmallSemibold.copyWith(color: AppColors.actionPrimary)),
+                  ),
                 ],
               ),
             ),
