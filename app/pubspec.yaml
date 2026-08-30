@@ -19,7 +19,11 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.13.2
+  # Lower-bounded rather than pinned to this dev environment's bleeding-edge
+  # Flutter build, so `pub get` also resolves on the stable Flutter versions
+  # available in CI and on other machines. 3.8 is the floor because the code
+  # uses null-aware list elements (`?item`), a language feature from 3.8.
+  sdk: '>=3.8.0 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
