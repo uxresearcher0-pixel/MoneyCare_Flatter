@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -7,18 +8,11 @@ import '../../core/widgets/cards.dart';
 import '../../core/widgets/top_bar.dart';
 import '../../data/providers/app_data.dart';
 
-const _privacyPolicyText = '''
-Money Care stores everything you enter — workspaces, projects, people, '''
-    '''transactions and settings — on this device only, for the current app '''
-    '''session. Nothing is uploaded to a Money Care server, because Money '''
-    '''Care doesn't operate one: there is no backend in this build.
-
-Account sign-in and passwords in this version are local placeholders '''
-    '''used to demonstrate the flow, not a real authentication system.
-
-If a future version adds cloud sync or backup, this policy will be '''
-    '''updated before that happens, and it will be opt-in.
-''';
+// The single source of truth for the privacy policy — also the URL used in
+// the Play Console / App Store listing, so the two never drift apart.
+// TODO: replace with the app's real production domain before store submission
+// (Google Play requires this on a policy-holder-owned URL, not a third party's).
+const _privacyPolicyUrl = 'https://claude.ai/code/artifact/67525f63-10f7-4304-abeb-8b7a2e4abd67';
 
 /// 12 Settings / Security & Privacy
 class SecurityScreen extends ConsumerWidget {
@@ -30,15 +24,14 @@ class SecurityScreen extends ConsumerWidget {
     );
   }
 
-  void _showPrivacyPolicy(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Privacy policy'),
-        content: SingleChildScrollView(child: Text(_privacyPolicyText, style: AppTextStyles.bodyMedium)),
-        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close'))],
-      ),
-    );
+  Future<void> _openPrivacyPolicy(BuildContext context) async {
+    final uri = Uri.parse(_privacyPolicyUrl);
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Couldn't open the privacy policy page")),
+      );
+    }
   }
 
   @override
@@ -83,7 +76,7 @@ class SecurityScreen extends ConsumerWidget {
                   icon: Icons.policy_outlined,
                   title: 'Privacy policy',
                   showDivider: false,
-                  onTap: () => _showPrivacyPolicy(context),
+                  onTap: () => _openPrivacyPolicy(context),
                 ),
               ],
             ),

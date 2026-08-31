@@ -6,7 +6,12 @@ plugins {
 
 android {
     namespace = "com.moneycare.money_care"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned rather than inherited from flutter.compileSdkVersion: CI resolves
+    // whatever public Flutter "stable" happens to be at build time, which may
+    // default lower than what Google Play currently requires. Pinning removes
+    // that drift as a submission risk. Bump this explicitly (and re-verify
+    // against Play's current requirement) rather than letting it float.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -20,7 +25,9 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Pinned to Google Play's current minimum target (Android 16 / API 36,
+        // effective 31 Aug 2026) rather than inherited — see compileSdk comment.
+        targetSdk = 36
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
         // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`

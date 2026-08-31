@@ -1,4 +1,4 @@
-name: Build release APK
+name: Build release APK and AAB
 
 on:
   workflow_dispatch: {}
@@ -29,9 +29,18 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - run: flutter build apk --release
+      # Google Play requires an .aab (App Bundle) for new app submissions —
+      # the .apk above is kept for direct-install/testing convenience only.
+      - run: flutter build appbundle --release
 
       - uses: actions/upload-artifact@v4
         with:
           name: money-care-release-apk
           path: app/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: money-care-release-aab
+          path: app/build/app/outputs/bundle/release/app-release.aab
           retention-days: 30
