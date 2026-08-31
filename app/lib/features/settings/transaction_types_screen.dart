@@ -1,46 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/cards.dart';
 import '../../core/widgets/top_bar.dart';
-
-class _TxType {
-  const _TxType(this.name, this.description, this.icon, this.enabled);
-  final String name;
-  final String description;
-  final IconData icon;
-  final bool enabled;
-}
-
-const _types = [
-  _TxType('Purchase', 'Money spent from a project fund', Icons.shopping_cart_rounded, true),
-  _TxType('Contribution', 'Money paid in by a contributor', Icons.arrow_downward_rounded, true),
-  _TxType('Transfer', 'Move funds between accounts or wallets', Icons.swap_horiz_rounded, true),
-  _TxType('Refund', 'Money returned for a prior purchase', Icons.replay_rounded, false),
-];
+import '../../data/providers/app_data.dart';
 
 /// 12 Settings / Transaction Types
-class TransactionTypesScreen extends StatefulWidget {
+class TransactionTypesScreen extends ConsumerWidget {
   const TransactionTypesScreen({super.key});
 
   @override
-  State<TransactionTypesScreen> createState() => _TransactionTypesScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appData = ref.watch(appDataProvider);
+    final types = appData.txKindConfigs.values.toList();
 
-class _TransactionTypesScreenState extends State<TransactionTypesScreen> {
-  final Map<String, bool> _enabled = {for (final t in _types) t.name: t.enabled};
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: const SimpleTopBar(title: 'Transaction types'),
       body: ListView.separated(
         padding: const EdgeInsets.all(16),
-        itemCount: _types.length,
+        itemCount: types.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) {
-          final t = _types[i];
+          final t = types[i];
           return AppCard(
             child: Row(
               children: [
@@ -56,9 +39,9 @@ class _TransactionTypesScreenState extends State<TransactionTypesScreen> {
                   ),
                 ),
                 Switch.adaptive(
-                  value: _enabled[t.name] ?? true,
+                  value: t.enabled,
                   activeThumbColor: AppColors.actionPrimary,
-                  onChanged: (v) => setState(() => _enabled[t.name] = v),
+                  onChanged: (v) => appData.setTxKindEnabled(t.id, v),
                 ),
               ],
             ),

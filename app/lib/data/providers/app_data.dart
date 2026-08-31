@@ -27,6 +27,11 @@ class AppData extends ChangeNotifier {
   final Map<String, Period> periods = {};
   final Map<String, Category> categories = {};
   final Map<String, AppTransaction> transactions = {};
+  final Map<String, Unit> units = {};
+  final Map<String, PaymentMethod> paymentMethods = {};
+  final Map<String, ContributionType> contributionTypes = {};
+  final Map<String, TxKindConfig> txKindConfigs = {};
+  final Map<String, FundAccount> accounts = {};
 
   String? activeWorkspaceId;
   String? activeProjectId;
@@ -349,6 +354,74 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
+  Unit addUnit(String name, String abbr) {
+    final unit = Unit(id: _uuid.v4(), name: name, abbr: abbr);
+    units[unit.id] = unit;
+    notifyListeners();
+    return unit;
+  }
+
+  void deleteUnit(String id) {
+    units.remove(id);
+    notifyListeners();
+  }
+
+  PaymentMethod addPaymentMethod(String name, {IconData icon = Icons.payments_outlined}) {
+    final method = PaymentMethod(id: _uuid.v4(), name: name, icon: icon);
+    paymentMethods[method.id] = method;
+    notifyListeners();
+    return method;
+  }
+
+  void deletePaymentMethod(String id) {
+    paymentMethods.remove(id);
+    notifyListeners();
+  }
+
+  ContributionType addContributionType(String name, String description, {IconData icon = Icons.label_rounded}) {
+    final type = ContributionType(id: _uuid.v4(), name: name, description: description, icon: icon);
+    contributionTypes[type.id] = type;
+    notifyListeners();
+    return type;
+  }
+
+  void deleteContributionType(String id) {
+    contributionTypes.remove(id);
+    notifyListeners();
+  }
+
+  void renameContributionType(String id, String name, String description) {
+    final existing = contributionTypes[id];
+    if (existing == null) return;
+    contributionTypes[id] = ContributionType(id: existing.id, name: name, description: description, icon: existing.icon);
+    notifyListeners();
+  }
+
+  void setTxKindEnabled(String id, bool enabled) {
+    final existing = txKindConfigs[id];
+    if (existing == null) return;
+    txKindConfigs[id] = TxKindConfig(
+      id: existing.id,
+      name: existing.name,
+      description: existing.description,
+      icon: existing.icon,
+      enabled: enabled,
+    );
+    notifyListeners();
+  }
+
+  FundAccount addAccount(String name, {num balance = 0, IconData icon = Icons.account_balance_wallet_rounded}) {
+    final account = FundAccount(id: _uuid.v4(), name: name, balance: balance, icon: icon);
+    accounts[account.id] = account;
+    notifyListeners();
+    return account;
+  }
+
+  void deleteAccount(String id) {
+    accounts.remove(id);
+    notifyListeners();
+  }
+
   void removePersonFromProject(String projectId, String personId) {
     projects[projectId]?.memberIds.remove(personId);
     notifyListeners();
@@ -477,6 +550,94 @@ class AppData extends ChangeNotifier {
         id: 'transport',
         name: 'Transport',
         icon: Icons.directions_car_rounded,
+      ),
+    });
+
+    units.addAll({
+      'kg': const Unit(id: 'kg', name: 'Kilogram', abbr: 'kg'),
+      'l': const Unit(id: 'l', name: 'Litre', abbr: 'L'),
+      'pcs': const Unit(id: 'pcs', name: 'Piece', abbr: 'pcs'),
+      'g': const Unit(id: 'g', name: 'Gram', abbr: 'g'),
+      'dz': const Unit(id: 'dz', name: 'Dozen', abbr: 'dz'),
+      'pack': const Unit(id: 'pack', name: 'Pack', abbr: 'pack'),
+    });
+
+    paymentMethods.addAll({
+      'cash': const PaymentMethod(id: 'cash', name: 'Cash', icon: Icons.payments_outlined),
+      'bank': const PaymentMethod(id: 'bank', name: 'Bank transfer', icon: Icons.account_balance_outlined),
+      'mobile': const PaymentMethod(
+        id: 'mobile',
+        name: 'Mobile banking (bKash/Nagad)',
+        icon: Icons.smartphone_outlined,
+      ),
+      'card': const PaymentMethod(id: 'card', name: 'Card', icon: Icons.credit_card_outlined),
+    });
+
+    contributionTypes.addAll({
+      'regular': const ContributionType(
+        id: 'regular',
+        name: 'Regular',
+        description: 'Recurring monthly share',
+        icon: Icons.repeat_rounded,
+      ),
+      'extra': const ContributionType(
+        id: 'extra',
+        name: 'Extra',
+        description: 'One-off additional amount',
+        icon: Icons.add_circle_outline_rounded,
+      ),
+      'occasion': const ContributionType(
+        id: 'occasion',
+        name: 'Occasion',
+        description: 'Gifts, festivals, special events',
+        icon: Icons.celebration_rounded,
+      ),
+    });
+
+    txKindConfigs.addAll({
+      'purchase': const TxKindConfig(
+        id: 'purchase',
+        name: 'Purchase',
+        description: 'Money spent from a project fund',
+        icon: Icons.shopping_cart_rounded,
+        enabled: true,
+      ),
+      'contribution': const TxKindConfig(
+        id: 'contribution',
+        name: 'Contribution',
+        description: 'Money paid in by a contributor',
+        icon: Icons.arrow_downward_rounded,
+        enabled: true,
+      ),
+      'transfer': const TxKindConfig(
+        id: 'transfer',
+        name: 'Transfer',
+        description: 'Move funds between accounts or wallets',
+        icon: Icons.swap_horiz_rounded,
+        enabled: true,
+      ),
+      'refund': const TxKindConfig(
+        id: 'refund',
+        name: 'Refund',
+        description: 'Money returned for a prior purchase',
+        icon: Icons.replay_rounded,
+        enabled: false,
+      ),
+    });
+
+    accounts.addAll({
+      'grocery': const FundAccount(
+        id: 'grocery',
+        name: 'Grocery Fund',
+        balance: 18640,
+        icon: Icons.account_balance_wallet_rounded,
+      ),
+      'rent': const FundAccount(id: 'rent', name: 'House Rent', balance: 42000, icon: Icons.home_rounded),
+      'savings': const FundAccount(
+        id: 'savings',
+        name: 'Emergency Savings',
+        balance: 96500,
+        icon: Icons.savings_rounded,
       ),
     });
 

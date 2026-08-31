@@ -146,6 +146,73 @@ class AppTransaction {
   num? quantity;
 }
 
+/// A unit of measure offered when logging a purchase quantity (kg, L, pcs…).
+class Unit {
+  const Unit({required this.id, required this.name, required this.abbr});
+
+  final String id;
+  final String name;
+  final String abbr;
+}
+
+/// A way money physically moved (cash, bank transfer, mobile banking…).
+class PaymentMethod {
+  const PaymentMethod({required this.id, required this.name, required this.icon});
+
+  final String id;
+  final String name;
+  final IconData icon;
+}
+
+/// A category of contribution (Regular, Extra, Occasion…) offered when
+/// logging what a person paid in.
+class ContributionType {
+  const ContributionType({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.icon,
+  });
+
+  final String id;
+  final String name;
+  final String description;
+  final IconData icon;
+}
+
+/// Whether a kind of transaction (Purchase, Contribution, Transfer,
+/// Refund…) is available for logging in this workspace.
+class TxKindConfig {
+  const TxKindConfig({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.icon,
+    required this.enabled,
+  });
+
+  final String id;
+  final String name;
+  final String description;
+  final IconData icon;
+  final bool enabled;
+}
+
+/// A named fund/wallet a project's money can be tracked against.
+class FundAccount {
+  const FundAccount({
+    required this.id,
+    required this.name,
+    required this.balance,
+    required this.icon,
+  });
+
+  final String id;
+  final String name;
+  final num balance;
+  final IconData icon;
+}
+
 /// An in-app notification shown in the notifications inbox.
 class AppNotification {
   AppNotification({

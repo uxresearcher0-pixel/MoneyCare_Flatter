@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/formatters.dart';
+import '../../data/models/models.dart';
 import '../../data/providers/app_data.dart';
 
 const _recentItems = ['Chicken', 'Rice', 'Fish', 'Oil', 'Vegetables'];
@@ -23,6 +24,8 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
   final _unitPrice = TextEditingController(text: '');
   String? _categoryId;
   String? _personId;
+  String? _unitId;
+  String _unitAbbr = 'kg';
 
   num get _total {
     final qty = num.tryParse(_quantity.text) ?? 0;
@@ -46,6 +49,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
       categoryId: _categoryId!,
       personId: _personId ?? appData.currentUser.id,
       quantity: num.tryParse(_quantity.text),
+      unit: _unitAbbr,
     );
     if (addAnother) {
       setState(() {
@@ -58,6 +62,25 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
     }
   }
 
+  Future<void> _pickUnit(BuildContext context, List<Unit> units) async {
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: units
+              .map((u) => ListTile(
+                    title: Text('${u.name} (${u.abbr})', style: AppTextStyles.bodyMedium),
+                    trailing: u.id == _unitId ? const Icon(Icons.check_rounded, color: AppColors.actionPrimary) : null,
+                    onTap: () => Navigator.pop(context, u.id),
+                  ))
+              .toList(),
+        ),
+      ),
+    );
+    if (picked != null) setState(() => _unitId = picked);
+  }
+
   @override
   Widget build(BuildContext context) {
     final appData = ref.watch(appDataProvider);
@@ -67,6 +90,9 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
     _categoryId ??= categories.isNotEmpty ? categories.first.id : null;
     final people = project != null ? appData.peopleInProject(project.id) : appData.people.values.toList();
     _personId ??= people.isNotEmpty ? people.first.id : null;
+    final units = appData.units.values.toList();
+    _unitId ??= units.isNotEmpty ? units.first.id : null;
+    _unitAbbr = units.firstWhere((u) => u.id == _unitId, orElse: () => const Unit(id: '', name: '', abbr: 'kg')).abbr;
 
     return Scaffold(
       appBar: AppBar(
@@ -166,7 +192,16 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
                 const SizedBox(height: 14),
                 Row(
                   children: [
-                    Expanded(child: _MiniField(label: 'Quantity', controller: _quantity, suffix: 'kg')),
+                    Expanded(
+                      child: _MiniField(
+                        label: 'Quantity',
+                        controller: _quantity,
+                        suffix: _unitAbbr,
+                        onSuffixTap: units.length <= 1
+                            ? null
+                            : () => _pickUnit(context, units),
+                      ),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: _MiniField(
@@ -194,17 +229,18 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
                         style: AppTextStyles.captionMedium.copyWith(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text('৳', style: AppTextStyles.h1.copyWith(color: AppColors.textSecondary, fontSize: 28)),
-                          const SizedBox(width: 6),
-                          Text('${_total.round()}', style: AppTextStyles.h1.copyWith(fontSize: 32)),
-                        ],
+                      Text(
+                        // Symbol and number in one bold string (same weight,
+                        // same color) rather than two separately-styled Text
+                        // widgets — matches how every other currency amount
+                        // in the app renders and avoids the sign looking
+                        // like a different, lighter glyph next to the total.
+                        '৳${_total.round()}',
+                        style: AppTextStyles.h1.copyWith(fontSize: 32),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${_quantity.text} kg × ৳${_unitPrice.text.isEmpty ? '0' : _unitPrice.text} = ${AppFormatters.currency(_total)}',
+                        '${_quantity.text} $_unitAbbr × ৳${_unitPrice.text.isEmpty ? '0' : _unitPrice.text} = ${AppFormatters.currency(_total)}',
                         style: AppTextStyles.caption.copyWith(color: AppColors.statusPositive),
                       ),
                     ],
@@ -331,18 +367,26 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
 }
 
 class _MiniField extends StatelessWidget {
-  const _MiniField({required this.label, required this.controller, this.suffix, this.prefix, this.onChanged});
+  const _MiniField({
+    required this.label,
+    required this.controller,
+    this.suffix,
+    this.prefix,
+    this.onChanged,
+    this.onSuffixTap,
+  });
 
   final String label;
   final TextEditingController controller;
   final String? suffix;
   final String? prefix;
   final ValueChanged<String>? onChanged;
+  final VoidCallback? onSuffixTap;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
@@ -362,10 +406,31 @@ class _MiniField extends StatelessWidget {
               border: InputBorder.none,
               isDense: true,
               contentPadding: const EdgeInsets.symmetric(vertical: 6),
-              prefixText: prefix,
+              prefixText: prefix == null ? null : '$prefix ',
               prefixStyle: AppTextStyles.bodySmallBold.copyWith(color: AppColors.textSecondary),
-              suffixText: suffix,
-              suffixStyle: AppTextStyles.captionMedium.copyWith(color: AppColors.textSecondary),
+              // A gap-bearing widget rather than suffixText — suffixText hugs
+              // the entered digits with no breathing room between them and
+              // the box edge.
+              suffixIcon: suffix == null
+                  ? null
+                  : InkWell(
+                      onTap: onSuffixTap,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 6, right: 2),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(suffix!, style: AppTextStyles.captionMedium.copyWith(color: AppColors.textSecondary)),
+                            if (onSuffixTap != null) ...[
+                              const SizedBox(width: 2),
+                              const Icon(Icons.expand_more_rounded, size: 16, color: AppColors.textSecondary),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+              suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
             ),
           ),
         ],

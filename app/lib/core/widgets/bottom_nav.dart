@@ -93,14 +93,20 @@ class _NavTab extends StatelessWidget {
           children: [
             Icon(icon, size: 20, color: color),
             const SizedBox(height: 2),
-            Text(
-              label,
-              // Explicit height (rather than inheriting AppTextStyles.caption's
-              // 1.4) keeps this label from overflowing the fixed-height nav
-              // bar when the Inter font hasn't loaded yet and a taller
-              // fallback font's metrics are used instead.
-              style: (selected ? AppTextStyles.captionSemibold : AppTextStyles.caption)
-                  .copyWith(color: color, height: 1.0),
+            // FittedBox + maxLines: 1 shrinks a long label (e.g. "Workspaces")
+            // to fit the 60px tab width instead of wrapping it mid-word.
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                maxLines: 1,
+                // Explicit height (rather than inheriting AppTextStyles.caption's
+                // 1.4) keeps this label from overflowing the fixed-height nav
+                // bar when the Inter font hasn't loaded yet and a taller
+                // fallback font's metrics are used instead.
+                style: (selected ? AppTextStyles.captionSemibold : AppTextStyles.caption)
+                    .copyWith(color: color, height: 1.0),
+              ),
             ),
           ],
         ),
