@@ -28,10 +28,24 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test
+      # RELEASE_* secrets are optional: unset, the release build falls back
+      # to debug signing (see android/app/build.gradle.kts) so this workflow
+      # keeps working before the user adds them — it just won't produce a
+      # Play-submittable signature until they do.
       - run: flutter build apk --release
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
       # Google Play requires an .aab (App Bundle) for new app submissions —
       # the .apk above is kept for direct-install/testing convenience only.
       - run: flutter build appbundle --release
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
       - uses: actions/upload-artifact@v4
         with:
