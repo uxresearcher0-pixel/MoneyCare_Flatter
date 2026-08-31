@@ -1,0 +1,5 @@
+{
+  "buildCommand": "git clone --depth 1 -b stable https://github.com/flutter/flutter.git _flutter && export PATH=\"$PWD/_flutter/bin:$PATH\" && flutter config --enable-web --no-analytics && flutter pub get && flutter build web --release",
+  "outputDirectory": "build/web",
+  "installCommand": "true"
+}
