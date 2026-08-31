@@ -117,11 +117,11 @@ class _QuickAddTile extends StatelessWidget {
       leading: Container(
         width: 40,
         height: 40,
-        decoration: const BoxDecoration(color: AppColors.actionSelected, shape: BoxShape.circle),
+        decoration: BoxDecoration(color: AppColors.actionSelected, shape: BoxShape.circle),
         child: Icon(icon, color: AppColors.actionPrimary, size: 20),
       ),
       title: Text(label, style: AppTextStyles.bodyMediumSemibold),
-      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+      trailing: Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
       onTap: onTap,
     );
   }

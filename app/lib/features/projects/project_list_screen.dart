@@ -36,7 +36,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         title: workspace?.name ?? 'Projects',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_rounded, color: AppColors.actionPrimary),
+            icon: Icon(Icons.add_circle_rounded, color: AppColors.actionPrimary),
             onPressed: () => context.push('/project/create?workspaceId=${widget.workspaceId}'),
           ),
         ],
@@ -56,7 +56,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.borderDefault),
+                  borderSide: BorderSide(color: AppColors.borderDefault),
                 ),
               ),
             ),

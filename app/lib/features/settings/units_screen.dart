@@ -52,7 +52,7 @@ class UnitsScreen extends ConsumerWidget {
         title: 'Units',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.actionPrimary),
+            icon: Icon(Icons.add_rounded, color: AppColors.actionPrimary),
             onPressed: () => _addUnit(context, ref),
           ),
         ],
@@ -70,7 +70,7 @@ class UnitsScreen extends ConsumerWidget {
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(color: AppColors.statusNegativeBg, borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
+              child: Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
             ),
             onDismissed: (_) => appData.deleteUnit(u.id),
             child: AppCard(

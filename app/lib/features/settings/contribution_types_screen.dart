@@ -83,7 +83,7 @@ class ContributionTypesScreen extends ConsumerWidget {
         title: 'Contribution types',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.actionPrimary),
+            icon: Icon(Icons.add_rounded, color: AppColors.actionPrimary),
             onPressed: () => _addType(context, ref),
           ),
         ],
@@ -101,7 +101,7 @@ class ContributionTypesScreen extends ConsumerWidget {
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(color: AppColors.statusNegativeBg, borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
+              child: Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
             ),
             onDismissed: (_) => appData.deleteContributionType(t.id),
             child: AppCard(
@@ -119,7 +119,7 @@ class ContributionTypesScreen extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
+                  Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
                 ],
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -6,21 +7,43 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/inputs.dart';
 import '../../core/widgets/top_bar.dart';
+import '../../data/models/models.dart';
+import '../../data/providers/app_data.dart';
 
 /// 12 Settings / Custom Field Builder
-class CustomFieldBuilderScreen extends StatefulWidget {
-  const CustomFieldBuilderScreen({super.key});
+class CustomFieldBuilderScreen extends ConsumerStatefulWidget {
+  const CustomFieldBuilderScreen({super.key, required this.scope});
+
+  /// 'workspace' or 'project' — which list this field is created into.
+  final String scope;
 
   @override
-  State<CustomFieldBuilderScreen> createState() => _CustomFieldBuilderScreenState();
+  ConsumerState<CustomFieldBuilderScreen> createState() => _CustomFieldBuilderScreenState();
 }
 
-class _CustomFieldBuilderScreenState extends State<CustomFieldBuilderScreen> {
+class _CustomFieldBuilderScreenState extends ConsumerState<CustomFieldBuilderScreen> {
   final _name = TextEditingController();
   String _type = 'Text';
   final List<TextEditingController> _options = [];
 
   static const _types = ['Text', 'Number', 'Dropdown', 'Toggle', 'Date', 'Wallet'];
+
+  void _create() {
+    if (_name.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Give the field a name')));
+      return;
+    }
+    final scope = widget.scope == 'workspace' ? CustomFieldScope.workspace : CustomFieldScope.project;
+    final options = _options.map((c) => c.text.trim()).where((s) => s.isNotEmpty).toList();
+    ref.read(appDataProvider).addCustomField(
+          _name.text.trim(),
+          _type,
+          scope,
+          detail: _type == 'Dropdown' && options.isNotEmpty ? options.join(', ') : 'Custom field',
+          options: options,
+        );
+    context.pop();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +103,7 @@ class _CustomFieldBuilderScreenState extends State<CustomFieldBuilderScreen> {
             PrimaryButton(
               label: 'Create field',
               radius: 10,
-              onPressed: () => context.pop(),
+              onPressed: _create,
             ),
           ],
         ),

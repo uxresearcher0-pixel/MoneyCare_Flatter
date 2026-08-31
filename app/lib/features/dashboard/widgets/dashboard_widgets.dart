@@ -156,7 +156,7 @@ class ContributorRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.only(bottom: 10),
       decoration: showDivider
-          ? const BoxDecoration(
+          ? BoxDecoration(
               border: Border(bottom: BorderSide(color: AppColors.borderDefault)),
             )
           : null,
@@ -208,7 +208,7 @@ class ActivityRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.only(bottom: 10),
         decoration: showDivider
-            ? const BoxDecoration(
+            ? BoxDecoration(
                 border: Border(bottom: BorderSide(color: AppColors.borderDefault)),
               )
             : null,
@@ -247,7 +247,7 @@ class ActivityRow extends StatelessWidget {
             const SizedBox(width: 12),
             InkWell(
               onTap: onMore,
-              child: const Icon(Icons.more_vert_rounded, size: 16, color: AppColors.textSecondary),
+              child: Icon(Icons.more_vert_rounded, size: 16, color: AppColors.textSecondary),
             ),
           ],
         ),

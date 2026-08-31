@@ -27,7 +27,7 @@ class _SyncScreenState extends State<SyncScreen> {
       _lastSynced = DateTime.now();
     });
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('All up to date'), backgroundColor: AppColors.actionPrimary),
+      SnackBar(content: Text('All up to date'), backgroundColor: AppColors.actionPrimary),
     );
   }
 
@@ -79,7 +79,7 @@ class _SyncScreenState extends State<SyncScreen> {
             decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(10)),
             child: Row(
               children: [
-                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.actionPrimary),
+                Icon(Icons.info_outline_rounded, size: 16, color: AppColors.actionPrimary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

@@ -48,7 +48,7 @@ class WorkspaceOverviewScreen extends ConsumerWidget {
               children: [
                 Row(
                   children: [
-                    const AppAvatar(
+                    AppAvatar(
                       icon: Icons.family_restroom_rounded,
                       size: 46,
                       shape: BoxShape.rectangle,
@@ -152,7 +152,7 @@ class WorkspaceOverviewScreen extends ConsumerWidget {
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                      Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
                     ],
                   ),
                 ),

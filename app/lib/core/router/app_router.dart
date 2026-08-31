@@ -25,6 +25,7 @@ import '../../features/purchases/add_purchase_screen.dart';
 import '../../features/purchases/add_contribution_screen.dart';
 import '../../features/purchases/bulk_entry_screen.dart';
 import '../../features/purchases/scan_receipt_screen.dart';
+import '../../features/activity/transaction_activity_screen.dart';
 import '../../features/activity/transaction_details_screen.dart';
 import '../../features/reports/spending_overview_screen.dart';
 import '../../features/budget/budget_overview_screen.dart';
@@ -86,6 +87,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/sign-up', builder: (c, s) => const SignUpScreen()),
 
       GoRoute(path: '/home', builder: (c, s) => const HomeShell()),
+      // Standalone push target for "See all activity" links outside the
+      // bottom-nav Activity tab (which only exists embedded in HomeShell's
+      // IndexedStack and isn't reachable by path on its own).
+      GoRoute(path: '/activity', builder: (c, s) => const TransactionActivityScreen()),
 
       GoRoute(path: '/workspaces', builder: (c, s) => const WorkspaceListScreen()),
       GoRoute(
@@ -183,11 +188,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       GoRoute(path: '/config/project-fields', builder: (c, s) => const ProjectFieldsScreen()),
-      GoRoute(path: '/config/field-editor', builder: (c, s) => const FieldEditorScreen()),
+      GoRoute(
+        path: '/config/field-editor',
+        builder: (c, s) => FieldEditorScreen(fieldId: s.uri.queryParameters['id'] ?? ''),
+      ),
       GoRoute(path: '/config/field-templates', builder: (c, s) => const FieldTemplatesScreen()),
       GoRoute(
         path: '/config/custom-field-builder',
-        builder: (c, s) => const CustomFieldBuilderScreen(),
+        builder: (c, s) => CustomFieldBuilderScreen(scope: s.uri.queryParameters['scope'] ?? 'project'),
       ),
 
       GoRoute(path: '/more', builder: (c, s) => const MoreHubScreen()),

@@ -339,7 +339,7 @@ class _CreateProjectScreenState extends ConsumerState<CreateProjectScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.shield_outlined, size: 16, color: AppColors.textSecondary),
+              Icon(Icons.shield_outlined, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(

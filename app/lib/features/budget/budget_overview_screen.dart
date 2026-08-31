@@ -135,7 +135,7 @@ class BudgetOverviewScreen extends ConsumerWidget {
                     Text('vs Last period', style: AppTextStyles.bodySmallBold),
                     Row(
                       children: [
-                        const Icon(Icons.arrow_downward_rounded, size: 12, color: AppColors.statusPositive),
+                        Icon(Icons.arrow_downward_rounded, size: 12, color: AppColors.statusPositive),
                         Text('12% lower', style: AppTextStyles.captionSemibold.copyWith(color: AppColors.statusPositive)),
                       ],
                     ),
@@ -190,7 +190,7 @@ class BudgetOverviewScreen extends ConsumerWidget {
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    const Icon(Icons.check_rounded, size: 16, color: AppColors.textSecondary),
+                    Icon(Icons.check_rounded, size: 16, color: AppColors.textSecondary),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(

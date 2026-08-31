@@ -71,7 +71,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
           children: units
               .map((u) => ListTile(
                     title: Text('${u.name} (${u.abbr})', style: AppTextStyles.bodyMedium),
-                    trailing: u.id == _unitId ? const Icon(Icons.check_rounded, color: AppColors.actionPrimary) : null,
+                    trailing: u.id == _unitId ? Icon(Icons.check_rounded, color: AppColors.actionPrimary) : null,
                     onTap: () => Navigator.pop(context, u.id),
                   ))
               .toList(),
@@ -115,7 +115,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.auto_awesome_rounded, size: 20, color: AppColors.actionPrimary),
+                          Icon(Icons.auto_awesome_rounded, size: 20, color: AppColors.actionPrimary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Column(
@@ -149,7 +149,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.search_rounded, color: AppColors.textSecondary),
+                          Icon(Icons.search_rounded, color: AppColors.textSecondary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: TextField(
@@ -162,7 +162,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
                               ),
                             ),
                           ),
-                          const Icon(Icons.mic_rounded, color: AppColors.actionPrimary),
+                          Icon(Icons.mic_rounded, color: AppColors.actionPrimary),
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -259,7 +259,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.account_balance_wallet_rounded, size: 20, color: AppColors.actionPrimary),
+                          Icon(Icons.account_balance_wallet_rounded, size: 20, color: AppColors.actionPrimary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: DropdownButtonHideUnderline(
@@ -278,7 +278,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
                       const SizedBox(height: 10),
                       Row(
                         children: [
-                          const Icon(Icons.person_outline_rounded, size: 20, color: AppColors.actionPrimary),
+                          Icon(Icons.person_outline_rounded, size: 20, color: AppColors.actionPrimary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: DropdownButtonHideUnderline(
@@ -303,7 +303,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
                   decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
-                      const Icon(Icons.playlist_add_rounded, color: AppColors.actionPrimary),
+                      Icon(Icons.playlist_add_rounded, color: AppColors.actionPrimary),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
@@ -319,7 +319,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
                       ),
                       TextButton(
                         onPressed: () => context.pushReplacement('/purchase/bulk'),
-                        child: const Icon(Icons.arrow_forward_rounded, color: AppColors.actionPrimary),
+                        child: Icon(Icons.arrow_forward_rounded, color: AppColors.actionPrimary),
                       ),
                     ],
                   ),
@@ -329,7 +329,7 @@ class _AddPurchaseScreenState extends ConsumerState<AddPurchaseScreen> {
           ),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.surface,
               border: Border(top: BorderSide(color: AppColors.borderDefault)),
             ),
@@ -424,7 +424,7 @@ class _MiniField extends StatelessWidget {
                             Text(suffix!, style: AppTextStyles.captionMedium.copyWith(color: AppColors.textSecondary)),
                             if (onSuffixTap != null) ...[
                               const SizedBox(width: 2),
-                              const Icon(Icons.expand_more_rounded, size: 16, color: AppColors.textSecondary),
+                              Icon(Icons.expand_more_rounded, size: 16, color: AppColors.textSecondary),
                             ],
                           ],
                         ),

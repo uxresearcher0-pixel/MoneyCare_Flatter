@@ -138,7 +138,7 @@ class _SettingsHubScreenState extends ConsumerState<SettingsHubScreen> {
               fillColor: AppColors.surface,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.borderDefault),
+                borderSide: BorderSide(color: AppColors.borderDefault),
               ),
             ),
           ),
@@ -199,7 +199,7 @@ class _SettingsGroup extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: i == rows.length - 1
                           ? null
-                          : const Border(bottom: BorderSide(color: AppColors.borderDefault)),
+                          : Border(bottom: BorderSide(color: AppColors.borderDefault)),
                     ),
                     child: Row(
                       children: [
@@ -213,7 +213,7 @@ class _SettingsGroup extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                         ],
-                        const Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textSecondary),
+                        Icon(Icons.chevron_right_rounded, size: 18, color: AppColors.textSecondary),
                       ],
                     ),
                   ),

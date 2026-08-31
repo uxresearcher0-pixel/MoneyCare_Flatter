@@ -64,7 +64,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
             child: CircleAvatar(
               radius: 16,
               backgroundColor: AppColors.surfaceSubtle,
-              child: const Icon(Icons.flash_on_rounded, size: 16, color: AppColors.textPrimary),
+              child: Icon(Icons.flash_on_rounded, size: 16, color: AppColors.textPrimary),
             ),
           ),
         ],
@@ -85,15 +85,15 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                       color: const Color(0xFFF5F5F5),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.receipt_long_rounded, color: AppColors.textSecondary),
+                    child: Icon(Icons.receipt_long_rounded, color: AppColors.textSecondary),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('IMG08302026ABC1.jpeg', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: AppColors.textPrimary)),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text('3024×4032 · 4.2 MB', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                       ],
                     ),
@@ -119,10 +119,10 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                         Container(
                           width: 6,
                           height: 6,
-                          decoration: const BoxDecoration(color: AppColors.actionPrimary, shape: BoxShape.circle),
+                          decoration: BoxDecoration(color: AppColors.actionPrimary, shape: BoxShape.circle),
                         ),
                         const SizedBox(width: 6),
-                        const Icon(Icons.receipt_long_outlined, size: 16, color: AppColors.textSecondary),
+                        Icon(Icons.receipt_long_outlined, size: 16, color: AppColors.textSecondary),
                         const SizedBox(width: 6),
                         Text('Last scan · 2 mins ago', style: AppTextStyles.captionSemibold.copyWith(color: AppColors.textSecondary)),
                       ],
@@ -184,7 +184,7 @@ class _ScanReceiptScreenState extends ConsumerState<ScanReceiptScreen> {
                                     width: 28,
                                     height: 28,
                                     decoration: const BoxDecoration(color: Color(0xFFFCEBEB), shape: BoxShape.circle),
-                                    child: const Icon(Icons.close_rounded, size: 14, color: AppColors.statusNegative),
+                                    child: Icon(Icons.close_rounded, size: 14, color: AppColors.statusNegative),
                                   ),
                                 ),
                               ],

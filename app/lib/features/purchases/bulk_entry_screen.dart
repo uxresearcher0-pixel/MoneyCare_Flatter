@@ -82,7 +82,7 @@ class _BulkEntryScreenState extends ConsumerState<BulkEntryScreen> {
                   decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
-                      const Icon(Icons.auto_awesome_rounded, size: 19, color: AppColors.actionPrimary),
+                      Icon(Icons.auto_awesome_rounded, size: 19, color: AppColors.actionPrimary),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -96,7 +96,7 @@ class _BulkEntryScreenState extends ConsumerState<BulkEntryScreen> {
                           ],
                         ),
                       ),
-                      const Icon(Icons.tune_rounded, size: 19, color: AppColors.actionPrimary),
+                      Icon(Icons.tune_rounded, size: 19, color: AppColors.actionPrimary),
                     ],
                   ),
                 ),
@@ -122,7 +122,7 @@ class _BulkEntryScreenState extends ConsumerState<BulkEntryScreen> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.add_rounded, size: 15, color: AppColors.actionPrimary),
+                                      Icon(Icons.add_rounded, size: 15, color: AppColors.actionPrimary),
                                       Text(item, style: AppTextStyles.captionSemibold.copyWith(color: AppColors.actionPrimary)),
                                     ],
                                   ),
@@ -157,7 +157,7 @@ class _BulkEntryScreenState extends ConsumerState<BulkEntryScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.add_rounded, size: 20, color: AppColors.actionPrimary),
+                        Icon(Icons.add_rounded, size: 20, color: AppColors.actionPrimary),
                         const SizedBox(width: 7),
                         Text('Add another item', style: AppTextStyles.bodySmallSemibold.copyWith(color: AppColors.actionPrimary)),
                       ],
@@ -179,7 +179,7 @@ class _BulkEntryScreenState extends ConsumerState<BulkEntryScreen> {
           ),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 9, 16, 9),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.surface,
               border: Border(top: BorderSide(color: AppColors.borderDefault)),
             ),
@@ -239,7 +239,7 @@ class _BulkRowCard extends StatelessWidget {
             width: 26,
             height: 26,
             alignment: Alignment.center,
-            decoration: const BoxDecoration(color: AppColors.surfaceSubtle, shape: BoxShape.circle),
+            decoration: BoxDecoration(color: AppColors.surfaceSubtle, shape: BoxShape.circle),
             child: Text('$index', style: AppTextStyles.captionSemibold.copyWith(color: AppColors.actionPrimary)),
           ),
           const SizedBox(width: 8),
@@ -271,7 +271,7 @@ class _BulkRowCard extends StatelessWidget {
           const SizedBox(width: 8),
           Text(AppFormatters.currency(row.total), style: AppTextStyles.bodySmallBold),
           IconButton(
-            icon: const Icon(Icons.more_vert_rounded, size: 18, color: AppColors.textSecondary),
+            icon: Icon(Icons.more_vert_rounded, size: 18, color: AppColors.textSecondary),
             onPressed: onRemove,
           ),
         ],

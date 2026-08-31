@@ -229,7 +229,11 @@ class _ProjectOverviewScreenState extends ConsumerState<ProjectOverviewScreen>
           : TabBarView(
               controller: _tabController,
               children: [
-                _OverviewTab(projectId: project.id, periodId: period.id),
+                _OverviewTab(
+                  projectId: project.id,
+                  periodId: period.id,
+                  onViewAllActivity: () => _tabController.animateTo(1),
+                ),
                 _ActivityTab(periodId: period.id),
                 _BudgetTab(projectId: project.id, periodId: period.id),
                 _PeopleTab(projectId: project.id),
@@ -264,10 +268,11 @@ class _ActionRow extends StatelessWidget {
 }
 
 class _OverviewTab extends ConsumerWidget {
-  const _OverviewTab({required this.projectId, required this.periodId});
+  const _OverviewTab({required this.projectId, required this.periodId, required this.onViewAllActivity});
 
   final String projectId;
   final String periodId;
+  final VoidCallback onViewAllActivity;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -421,7 +426,7 @@ class _OverviewTab extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text('Recent Transactions', style: AppTextStyles.bodySmallBold),
-                  LinkButton(label: 'View All', onPressed: () {}),
+                  LinkButton(label: 'View All', onPressed: onViewAllActivity),
                 ],
               ),
               const SizedBox(height: 12),
@@ -534,7 +539,7 @@ class _PeopleTab extends ConsumerWidget {
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                  Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
                 ],
               ),
             ),

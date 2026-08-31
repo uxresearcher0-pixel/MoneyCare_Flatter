@@ -83,7 +83,7 @@ class _TransactionActivityScreenState extends ConsumerState<TransactionActivityS
                     fillColor: AppColors.surface,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.borderDefault),
+                      borderSide: BorderSide(color: AppColors.borderDefault),
                     ),
                   ),
                 ),
@@ -175,7 +175,7 @@ class _TxRow extends StatelessWidget {
               width: 40,
               height: 40,
               alignment: Alignment.center,
-              decoration: const BoxDecoration(color: AppColors.background, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: AppColors.background, shape: BoxShape.circle),
               child: Icon(
                 isPurchase ? Icons.shopping_cart_rounded : Icons.account_balance_wallet_rounded,
                 size: 20,

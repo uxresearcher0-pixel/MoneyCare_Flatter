@@ -44,7 +44,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
         title: 'Payment methods',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.actionPrimary),
+            icon: Icon(Icons.add_rounded, color: AppColors.actionPrimary),
             onPressed: () => _addMethod(context, ref),
           ),
         ],
@@ -63,7 +63,7 @@ class PaymentMethodsScreen extends ConsumerWidget {
                 Expanded(child: Text(m.name, style: AppTextStyles.labelSemibold)),
                 InkWell(
                   onTap: () => appData.deletePaymentMethod(m.id),
-                  child: const Icon(Icons.delete_outline_rounded, color: AppColors.textSecondary, size: 20),
+                  child: Icon(Icons.delete_outline_rounded, color: AppColors.textSecondary, size: 20),
                 ),
               ],
             ),

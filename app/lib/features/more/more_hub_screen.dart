@@ -43,7 +43,12 @@ class MoreHubScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('More'),
         titleTextStyle: AppTextStyles.h2,
-        actions: [IconButton(icon: const Icon(Icons.notifications_none_rounded), onPressed: () {})],
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none_rounded),
+            onPressed: () => context.push('/notifications'),
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
@@ -67,7 +72,7 @@ class MoreHubScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.swap_horiz_rounded, color: AppColors.actionPrimary),
+                Icon(Icons.swap_horiz_rounded, color: AppColors.actionPrimary),
               ],
             ),
           ),
@@ -83,7 +88,7 @@ class MoreHubScreen extends ConsumerWidget {
               onTap: () => ref.read(appDataProvider).signOut(),
               child: Row(
                 children: [
-                  const Icon(Icons.logout_rounded, color: AppColors.statusNegative),
+                  Icon(Icons.logout_rounded, color: AppColors.statusNegative),
                   const SizedBox(width: 12),
                   Text('Sign out', style: AppTextStyles.bodySmallSemibold.copyWith(color: AppColors.statusNegative)),
                 ],
@@ -121,7 +126,7 @@ class _MenuGroup extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: i == rows.length - 1
                           ? null
-                          : const Border(bottom: BorderSide(color: AppColors.borderDefault)),
+                          : Border(bottom: BorderSide(color: AppColors.borderDefault)),
                     ),
                     child: Row(
                       children: [
@@ -139,7 +144,7 @@ class _MenuGroup extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textSecondary),
+                        Icon(Icons.chevron_right_rounded, size: 20, color: AppColors.textSecondary),
                       ],
                     ),
                   ),

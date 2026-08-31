@@ -6,10 +6,18 @@ import 'app_text_styles.dart';
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get light {
+  static const _instantTransitions = PageTransitionsTheme(
+    builders: {
+      TargetPlatform.android: _InstantPageTransitionsBuilder(),
+      TargetPlatform.iOS: _InstantPageTransitionsBuilder(),
+    },
+  );
+
+  static ThemeData light({bool reduceMotion = false}) {
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      pageTransitionsTheme: reduceMotion ? _instantTransitions : null,
       scaffoldBackgroundColor: AppColors.background,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.actionPrimary,
@@ -31,10 +39,10 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        iconTheme: const IconThemeData(color: AppColors.textPrimary),
+        iconTheme: IconThemeData(color: AppColors.textPrimary),
         titleTextStyle: AppTextStyles.bodyMediumSemibold,
       ),
-      dividerTheme: const DividerThemeData(
+      dividerTheme: DividerThemeData(
         color: AppColors.borderDefault,
         thickness: 1,
         space: 1,
@@ -57,7 +65,7 @@ class AppTheme {
           foregroundColor: AppColors.actionPrimary,
           minimumSize: const Size.fromHeight(52),
           textStyle: AppTextStyles.bodyLargeSemibold,
-          side: const BorderSide(color: AppColors.borderDefault),
+          side: BorderSide(color: AppColors.borderDefault),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
@@ -81,19 +89,19 @@ class AppTheme {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          borderSide: const BorderSide(color: AppColors.borderDefault),
+          borderSide: BorderSide(color: AppColors.borderDefault),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          borderSide: const BorderSide(color: AppColors.borderDefault),
+          borderSide: BorderSide(color: AppColors.borderDefault),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          borderSide: const BorderSide(color: AppColors.actionPrimary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.actionPrimary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          borderSide: const BorderSide(color: AppColors.statusNegative),
+          borderSide: BorderSide(color: AppColors.statusNegative),
         ),
       ),
       cardTheme: CardThemeData(
@@ -102,7 +110,7 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          side: const BorderSide(color: AppColors.borderDefault),
+          side: BorderSide(color: AppColors.borderDefault),
         ),
       ),
       chipTheme: base.chipTheme.copyWith(
@@ -115,7 +123,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -130,10 +138,11 @@ class AppTheme {
   /// read from the app theme — dialogs, snackbars, menus, switches, the
   /// system nav/status bar chrome — for a Dark/System appearance choice.
   /// It does not repaint the custom-built screens themselves.
-  static ThemeData get dark {
+  static ThemeData dark({bool reduceMotion = false}) {
     final base = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
+      pageTransitionsTheme: reduceMotion ? _instantTransitions : null,
       colorScheme: ColorScheme.fromSeed(
         seedColor: AppColors.actionPrimary,
         brightness: Brightness.dark,
@@ -151,5 +160,24 @@ class AppTheme {
         ),
       ),
     );
+  }
+}
+
+/// Used by [AppTheme]'s `reduceMotion` option: skips the slide/fade
+/// animation between routes entirely rather than shortening it, since
+/// go_router's own custom transitions (see app_router.dart) sit on top of
+/// this for routes that define one.
+class _InstantPageTransitionsBuilder extends PageTransitionsBuilder {
+  const _InstantPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return child;
   }
 }

@@ -28,7 +28,7 @@ class PeriodListScreen extends ConsumerWidget {
         title: '${project?.name ?? 'Project'} periods',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.actionPrimary),
+            icon: Icon(Icons.add_rounded, color: AppColors.actionPrimary),
             onPressed: () => context.push('/project/$projectId/periods/create'),
           ),
         ],

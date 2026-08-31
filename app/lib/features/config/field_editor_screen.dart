@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -6,30 +7,52 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/buttons.dart';
 import '../../core/widgets/inputs.dart';
 import '../../core/widgets/top_bar.dart';
+import '../../data/providers/app_data.dart';
 
-/// 12 Configuration / Field Editor — Calculated Total
-class FieldEditorScreen extends StatefulWidget {
-  const FieldEditorScreen({super.key});
+/// 12 Configuration / Field Editor — edits an existing custom field.
+class FieldEditorScreen extends ConsumerStatefulWidget {
+  const FieldEditorScreen({super.key, required this.fieldId});
+
+  final String fieldId;
 
   @override
-  State<FieldEditorScreen> createState() => _FieldEditorScreenState();
+  ConsumerState<FieldEditorScreen> createState() => _FieldEditorScreenState();
 }
 
-class _FieldEditorScreenState extends State<FieldEditorScreen> {
-  final _name = TextEditingController(text: 'Monthly Budget Cap');
-  String _type = 'Calculated Total';
-  bool _required = false;
+class _FieldEditorScreenState extends ConsumerState<FieldEditorScreen> {
+  late final TextEditingController _name;
+  late String _type;
+  late bool _required;
+  bool _initialized = false;
 
   static const _types = ['Text', 'Number', 'Dropdown', 'Toggle', 'Wallet', 'Calculated Total'];
 
+  void _init(String name, String type, bool required) {
+    if (_initialized) return;
+    _name = TextEditingController(text: name);
+    _type = type;
+    _required = required;
+    _initialized = true;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final appData = ref.watch(appDataProvider);
+    final field = appData.customFields[widget.fieldId];
+    if (field == null) {
+      return const Scaffold(body: Center(child: Text('Field not found')));
+    }
+    _init(field.name, field.type, field.required);
+
     return Scaffold(
       appBar: SimpleTopBar(
         title: 'Field editor',
         actions: [
           TextButton(
-            onPressed: () {},
+            onPressed: () {
+              appData.deleteCustomField(field.id);
+              context.pop();
+            },
             child: Text('Delete', style: AppTextStyles.bodySmallSemibold.copyWith(color: AppColors.statusNegative)),
           ),
         ],
@@ -74,7 +97,7 @@ class _FieldEditorScreenState extends State<FieldEditorScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.functions_rounded, size: 18, color: AppColors.actionPrimary),
+                          Icon(Icons.functions_rounded, size: 18, color: AppColors.actionPrimary),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
@@ -97,7 +120,14 @@ class _FieldEditorScreenState extends State<FieldEditorScreen> {
                 ],
               ),
             ),
-            PrimaryButton(label: 'Save field', radius: 10, onPressed: () => context.pop()),
+            PrimaryButton(
+              label: 'Save field',
+              radius: 10,
+              onPressed: () {
+                appData.updateCustomField(field.id, name: _name.text.trim(), type: _type, required: _required);
+                context.pop();
+              },
+            ),
           ],
         ),
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -23,6 +24,47 @@ class _SpendingOverviewScreenState extends ConsumerState<SpendingOverviewScreen>
   String _tab = 'Spending';
   static const _tabs = ['Spending', 'Categories', 'Contributions', 'People', 'Budget', 'Period Comparison'];
 
+  void _shareSummary(Period period, num total, Map<Category, num> categorySpend) {
+    final lines = [
+      'Spending overview — ${period.label}',
+      'Total spent: ${AppFormatters.currency(total)}',
+      '',
+      'By category:',
+      for (final e in categorySpend.entries) '  ${e.key.name}: ${AppFormatters.currency(e.value)}',
+    ];
+    Share.share(lines.join('\n'));
+  }
+
+  void _showAsTable(BuildContext context, List<AppTransaction> items, AppData appData) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.7,
+        expand: false,
+        builder: (context, scrollController) => SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(16),
+          child: DataTable(
+            columns: const [
+              DataColumn(label: Text('Item')),
+              DataColumn(label: Text('Category')),
+              DataColumn(label: Text('Amount'), numeric: true),
+            ],
+            rows: [
+              for (final t in items)
+                DataRow(cells: [
+                  DataCell(Text(t.title)),
+                  DataCell(Text(appData.categories[t.categoryId]?.name ?? '')),
+                  DataCell(Text(AppFormatters.currency(t.amount))),
+                ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final appData = ref.watch(appDataProvider);
@@ -45,7 +87,10 @@ class _SpendingOverviewScreenState extends ConsumerState<SpendingOverviewScreen>
       appBar: SimpleTopBar(
         title: 'Spending overview',
         actions: [
-          IconButton(icon: const Icon(Icons.ios_share_rounded), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.ios_share_rounded),
+            onPressed: () => _shareSummary(period, total, categorySpend),
+          ),
         ],
       ),
       body: ListView(
@@ -85,7 +130,7 @@ class _SpendingOverviewScreenState extends ConsumerState<SpendingOverviewScreen>
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.arrow_downward_rounded, size: 14, color: AppColors.statusPositive),
+                    Icon(Icons.arrow_downward_rounded, size: 14, color: AppColors.statusPositive),
                     Text('12% lower than last period', style: AppTextStyles.captionMedium.copyWith(color: AppColors.statusPositive)),
                   ],
                 ),
@@ -153,7 +198,7 @@ class _SpendingOverviewScreenState extends ConsumerState<SpendingOverviewScreen>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Top purchases', style: AppTextStyles.bodySmallBold),
-                    LinkButton(label: 'View as table', onPressed: () {}),
+                    LinkButton(label: 'View as table', onPressed: () => _showAsTable(context, topItems, appData)),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -190,7 +235,7 @@ class _SpendingOverviewScreenState extends ConsumerState<SpendingOverviewScreen>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.lightbulb_rounded, size: 18, color: AppColors.actionPrimary),
+                Icon(Icons.lightbulb_rounded, size: 18, color: AppColors.actionPrimary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(

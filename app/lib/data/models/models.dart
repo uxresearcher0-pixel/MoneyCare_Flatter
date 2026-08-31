@@ -213,6 +213,50 @@ class FundAccount {
   final IconData icon;
 }
 
+/// Where a custom field applies: every project in a workspace, or one project.
+enum CustomFieldScope { workspace, project }
+
+/// A user-defined extra field (e.g. "Preferred Unit", "Receipt Required")
+/// attached to a workspace or a single project.
+class CustomField {
+  const CustomField({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.scope,
+    this.detail = '',
+    this.required = false,
+    this.options = const [],
+  });
+
+  final String id;
+  final String name;
+  final String type; // Text / Number / Dropdown / Toggle / Date / Wallet / Calculated Total
+  final CustomFieldScope scope;
+  final String detail;
+  final bool required;
+  final List<String> options;
+}
+
+/// A recurring bill or contribution reminder (e.g. "Electricity bill,
+/// monthly on the 5th"). Purely a reminder list in this build — enabling
+/// one does not yet auto-create transactions each period.
+class RecurringRule {
+  const RecurringRule({
+    required this.id,
+    required this.title,
+    required this.schedule,
+    required this.amount,
+    this.enabled = true,
+  });
+
+  final String id;
+  final String title;
+  final String schedule;
+  final num amount;
+  final bool enabled;
+}
+
 /// An in-app notification shown in the notifications inbox.
 class AppNotification {
   AppNotification({

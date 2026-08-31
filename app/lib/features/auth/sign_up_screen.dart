@@ -71,7 +71,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                         value: _agreed,
                         onChanged: (v) => setState(() => _agreed = v ?? false),
                         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        side: const BorderSide(color: AppColors.borderDefault, width: 1.5),
+                        side: BorderSide(color: AppColors.borderDefault, width: 1.5),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                       ),
                     ),

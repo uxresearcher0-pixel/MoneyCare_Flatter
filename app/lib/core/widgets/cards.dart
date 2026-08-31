@@ -10,14 +10,17 @@ class AppCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(16),
     this.onTap,
-    this.color = AppColors.surface,
+    this.color,
     this.margin,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
   final VoidCallback? onTap;
-  final Color color;
+  // Nullable + resolved in build() rather than a plain default value: since
+  // AppColors is now brightness-aware (not compile-time const), it can't be
+  // used as a `const` constructor's default parameter value.
+  final Color? color;
   final EdgeInsetsGeometry? margin;
 
   @override
@@ -25,7 +28,7 @@ class AppCard extends StatelessWidget {
     final card = Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: color,
+        color: color ?? AppColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.borderDefault),
         boxShadow: const [
@@ -54,35 +57,37 @@ class AppAvatar extends StatelessWidget {
     this.label,
     this.icon,
     this.size = 36,
-    this.background = AppColors.actionSelected,
-    this.foreground = AppColors.actionPrimary,
+    this.background,
+    this.foreground,
     this.shape = BoxShape.circle,
   });
 
   final String? label;
   final IconData? icon;
   final double size;
-  final Color background;
-  final Color foreground;
+  final Color? background;
+  final Color? foreground;
   final BoxShape shape;
 
   @override
   Widget build(BuildContext context) {
+    final bg = background ?? AppColors.actionSelected;
+    final fg = foreground ?? AppColors.actionPrimary;
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: background,
+        color: bg,
         shape: shape,
         borderRadius: shape == BoxShape.rectangle ? BorderRadius.circular(size * 0.2) : null,
       ),
       child: icon != null
-          ? Icon(icon, size: size * 0.5, color: foreground)
+          ? Icon(icon, size: size * 0.5, color: fg)
           : Text(
               label ?? '',
               style: AppTextStyles.bodySmallBold.copyWith(
-                color: foreground,
+                color: fg,
                 fontSize: size * 0.38,
               ),
             ),
@@ -95,15 +100,15 @@ class StatusBadge extends StatelessWidget {
   const StatusBadge({
     super.key,
     required this.label,
-    this.background = AppColors.surfaceSubtle,
-    this.foreground = AppColors.statusPositive,
+    this.background,
+    this.foreground,
     this.pill = true,
     this.dense = false,
   });
 
   final String label;
-  final Color background;
-  final Color foreground;
+  final Color? background;
+  final Color? foreground;
   final bool pill;
   final bool dense;
 
@@ -129,13 +134,13 @@ class StatusBadge extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: dense ? 6 : 8, vertical: dense ? 2 : 4),
       decoration: BoxDecoration(
-        color: background,
+        color: background ?? AppColors.surfaceSubtle,
         borderRadius: BorderRadius.circular(pill ? 100 : 4),
       ),
       child: Text(
         label,
         style: (dense ? AppTextStyles.captionSemibold : AppTextStyles.captionBold)
-            .copyWith(color: foreground),
+            .copyWith(color: foreground ?? AppColors.statusPositive),
       ),
     );
   }
@@ -147,14 +152,14 @@ class AppProgressBar extends StatelessWidget {
     super.key,
     required this.value,
     this.height = 6,
-    this.color = AppColors.actionPrimary,
-    this.trackColor = AppColors.borderDefault,
+    this.color,
+    this.trackColor,
   });
 
   final double value; // 0..1
   final double height;
-  final Color color;
-  final Color trackColor;
+  final Color? color;
+  final Color? trackColor;
 
   @override
   Widget build(BuildContext context) {
@@ -163,8 +168,8 @@ class AppProgressBar extends StatelessWidget {
       child: LinearProgressIndicator(
         value: value.clamp(0, 1),
         minHeight: height,
-        backgroundColor: trackColor,
-        valueColor: AlwaysStoppedAnimation(color),
+        backgroundColor: trackColor ?? AppColors.borderDefault,
+        valueColor: AlwaysStoppedAnimation(color ?? AppColors.actionPrimary),
       ),
     );
   }

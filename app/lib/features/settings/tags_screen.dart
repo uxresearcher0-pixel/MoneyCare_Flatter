@@ -42,7 +42,7 @@ class _TagsScreenState extends State<TagsScreen> {
     return Scaffold(
       appBar: SimpleTopBar(
         title: 'Tags',
-        actions: [IconButton(icon: const Icon(Icons.add_rounded, color: AppColors.actionPrimary), onPressed: _addTag)],
+        actions: [IconButton(icon: Icon(Icons.add_rounded, color: AppColors.actionPrimary), onPressed: _addTag)],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -54,7 +54,7 @@ class _TagsScreenState extends State<TagsScreen> {
                 (tag) => Chip(
                   label: Text('#$tag', style: AppTextStyles.labelMedium.copyWith(color: AppColors.actionPrimary)),
                   backgroundColor: AppColors.actionSelected,
-                  deleteIcon: const Icon(Icons.close_rounded, size: 16, color: AppColors.actionPrimary),
+                  deleteIcon: Icon(Icons.close_rounded, size: 16, color: AppColors.actionPrimary),
                   onDeleted: () => setState(() => _tags.remove(tag)),
                   side: BorderSide.none,
                 ),

@@ -70,7 +70,7 @@ class NotificationsScreen extends ConsumerWidget {
                           margin: const EdgeInsets.only(top: 4),
                           width: 8,
                           height: 8,
-                          decoration: const BoxDecoration(color: AppColors.statusNegative, shape: BoxShape.circle),
+                          decoration: BoxDecoration(color: AppColors.statusNegative, shape: BoxShape.circle),
                         ),
                     ],
                   ),

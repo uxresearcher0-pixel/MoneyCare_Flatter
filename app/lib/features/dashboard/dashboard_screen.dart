@@ -22,6 +22,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   bool _balanceHidden = false;
+  bool _insightDismissed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +109,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ],
                   ),
                 ),
-                const Icon(Icons.expand_more_rounded, size: 18, color: AppColors.textSecondary),
+                Icon(Icons.expand_more_rounded, size: 18, color: AppColors.textSecondary),
               ],
             ),
           ),
@@ -292,7 +293,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(Icons.arrow_downward_rounded, size: 14, color: AppColors.statusPositive),
+                    Icon(Icons.arrow_downward_rounded, size: 14, color: AppColors.statusPositive),
                     const SizedBox(width: 4),
                     Text(
                       '12% lower than last month',
@@ -406,43 +407,52 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     ),
                   ),
                 const SizedBox(height: 4),
-                LinkButton(label: 'See all activity', onPressed: () {}),
+                LinkButton(label: 'See all activity', onPressed: () => context.push('/activity')),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          AppCard(
-            color: AppColors.actionSelected,
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          if (!_insightDismissed && period.monthlyBudget > 0) ...[
+            const SizedBox(height: 16),
+            Builder(builder: (context) {
+              final usedPct = (totalPurchases / period.monthlyBudget * 100).clamp(0, 999).round();
+              return AppCard(
+                color: AppColors.actionSelected,
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.lightbulb_rounded, size: 16, color: AppColors.actionPrimary),
-                    const SizedBox(width: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.lightbulb_rounded, size: 16, color: AppColors.actionPrimary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Daily Insight',
+                          style: AppTextStyles.labelSemibold.copyWith(color: AppColors.actionPrimary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     Text(
-                      'Daily Insight',
-                      style: AppTextStyles.labelSemibold.copyWith(color: AppColors.actionPrimary),
+                      "You've used $usedPct% of ${period.label}'s budget so far.",
+                      style: AppTextStyles.labelMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        LinkButton(label: 'Review details', onPressed: () => context.push('/reports/spending')),
+                        const SizedBox(width: 16),
+                        LinkButton(
+                          label: 'Dismiss',
+                          color: AppColors.textSecondary,
+                          onPressed: () => setState(() => _insightDismissed = true),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Grocery spending is 12% lower than at this point last month.',
-                  style: AppTextStyles.labelMedium,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    LinkButton(label: 'Review details', onPressed: () => context.push('/reports/spending')),
-                    const SizedBox(width: 16),
-                    LinkButton(label: 'Dismiss', color: AppColors.textSecondary, onPressed: () {}),
-                  ],
-                ),
-              ],
-            ),
-          ),
+              );
+            }),
+          ],
         ],
       ),
     );
@@ -477,7 +487,7 @@ class _WeekBarChart extends StatelessWidget {
               return Container(
                 width: 24,
                 height: h.toDouble(),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.actionPrimary,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
                 ),

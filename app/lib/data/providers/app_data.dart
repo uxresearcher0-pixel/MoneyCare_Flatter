@@ -32,6 +32,8 @@ class AppData extends ChangeNotifier {
   final Map<String, ContributionType> contributionTypes = {};
   final Map<String, TxKindConfig> txKindConfigs = {};
   final Map<String, FundAccount> accounts = {};
+  final Map<String, CustomField> customFields = {};
+  final Map<String, RecurringRule> recurringRules = {};
 
   String? activeWorkspaceId;
   String? activeProjectId;
@@ -422,6 +424,73 @@ class AppData extends ChangeNotifier {
     notifyListeners();
   }
 
+  CustomField addCustomField(
+    String name,
+    String type,
+    CustomFieldScope scope, {
+    String detail = '',
+    bool required = false,
+    List<String> options = const [],
+  }) {
+    final field = CustomField(
+      id: _uuid.v4(),
+      name: name,
+      type: type,
+      scope: scope,
+      detail: detail,
+      required: required,
+      options: options,
+    );
+    customFields[field.id] = field;
+    notifyListeners();
+    return field;
+  }
+
+  void updateCustomField(String id, {String? name, String? type, bool? required}) {
+    final existing = customFields[id];
+    if (existing == null) return;
+    customFields[id] = CustomField(
+      id: existing.id,
+      name: name ?? existing.name,
+      type: type ?? existing.type,
+      scope: existing.scope,
+      detail: existing.detail,
+      required: required ?? existing.required,
+      options: existing.options,
+    );
+    notifyListeners();
+  }
+
+  void deleteCustomField(String id) {
+    customFields.remove(id);
+    notifyListeners();
+  }
+
+  RecurringRule addRecurringRule(String title, String schedule, num amount) {
+    final rule = RecurringRule(id: _uuid.v4(), title: title, schedule: schedule, amount: amount);
+    recurringRules[rule.id] = rule;
+    notifyListeners();
+    return rule;
+  }
+
+  void setRecurringRuleEnabled(String id, bool enabled) {
+    final existing = recurringRules[id];
+    if (existing == null) return;
+    recurringRules[id] = RecurringRule(
+      id: existing.id,
+      title: existing.title,
+      schedule: existing.schedule,
+      amount: existing.amount,
+      enabled: enabled,
+    );
+    notifyListeners();
+  }
+
+  void deleteRecurringRule(String id) {
+    recurringRules.remove(id);
+    notifyListeners();
+  }
+
   void removePersonFromProject(String projectId, String personId) {
     projects[projectId]?.memberIds.remove(personId);
     notifyListeners();
@@ -491,6 +560,17 @@ class AppData extends ChangeNotifier {
   bool emailNotificationsEnabled = false;
   bool budgetAlertsEnabled = true;
   bool biometricLockEnabled = false;
+
+  bool largerTextEnabled = false;
+  bool highContrastEnabled = false;
+  bool reduceMotionEnabled = false;
+
+  void setAccessibility({bool? largerText, bool? highContrast, bool? reduceMotion}) {
+    if (largerText != null) largerTextEnabled = largerText;
+    if (highContrast != null) highContrastEnabled = highContrast;
+    if (reduceMotion != null) reduceMotionEnabled = reduceMotion;
+    notifyListeners();
+  }
 
   void setPreference({
     bool? push,
@@ -639,6 +719,66 @@ class AppData extends ChangeNotifier {
         balance: 96500,
         icon: Icons.savings_rounded,
       ),
+    });
+
+    customFields.addAll({
+      'household-id': const CustomField(
+        id: 'household-id',
+        name: 'Household ID',
+        type: 'Text',
+        scope: CustomFieldScope.workspace,
+        detail: 'Shared reference across all projects',
+      ),
+      'default-currency': const CustomField(
+        id: 'default-currency',
+        name: 'Default Currency',
+        type: 'Dropdown',
+        scope: CustomFieldScope.workspace,
+        detail: '৳ BDT for every new project',
+        options: ['BDT'],
+      ),
+      'fiscal-year-start': const CustomField(
+        id: 'fiscal-year-start',
+        name: 'Fiscal Year Start',
+        type: 'Date',
+        scope: CustomFieldScope.workspace,
+        detail: 'Used for yearly reports',
+      ),
+      'grocery-fund': const CustomField(
+        id: 'grocery-fund',
+        name: 'Grocery Fund',
+        type: 'Wallet',
+        scope: CustomFieldScope.project,
+        detail: 'Default payment source',
+      ),
+      'monthly-budget-cap': const CustomField(
+        id: 'monthly-budget-cap',
+        name: 'Monthly Budget Cap',
+        type: 'Calculated Total',
+        scope: CustomFieldScope.project,
+        detail: 'Sum of category budgets',
+      ),
+      'receipt-required': const CustomField(
+        id: 'receipt-required',
+        name: 'Receipt Required',
+        type: 'Toggle',
+        scope: CustomFieldScope.project,
+        detail: 'Off by default',
+      ),
+      'preferred-unit': const CustomField(
+        id: 'preferred-unit',
+        name: 'Preferred Unit',
+        type: 'Dropdown',
+        scope: CustomFieldScope.project,
+        detail: 'kg, L, pcs',
+        options: ['kg', 'L', 'pcs'],
+      ),
+    });
+
+    recurringRules.addAll({
+      'r1': const RecurringRule(id: 'r1', title: 'Abbu — Regular contribution', schedule: 'Monthly on the 1st', amount: 14200),
+      'r2': const RecurringRule(id: 'r2', title: 'Electricity bill', schedule: 'Monthly on the 5th', amount: 1000),
+      'r3': const RecurringRule(id: 'r3', title: 'House rent contribution', schedule: 'Monthly on the 1st', amount: 9440, enabled: false),
     });
 
     people.addAll({

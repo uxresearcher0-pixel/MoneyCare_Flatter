@@ -41,7 +41,7 @@ class ContributionsScreen extends ConsumerWidget {
                 return AppCard(
                   child: Row(
                     children: [
-                      const AppAvatar(icon: Icons.arrow_downward_rounded, size: 32, shape: BoxShape.rectangle, background: AppColors.surfaceSubtle, foreground: AppColors.statusPositive),
+                      AppAvatar(icon: Icons.arrow_downward_rounded, size: 32, shape: BoxShape.rectangle, background: AppColors.surfaceSubtle, foreground: AppColors.statusPositive),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(

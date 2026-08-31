@@ -66,7 +66,7 @@ class _CarryForwardScreenState extends ConsumerState<CarryForwardScreen> {
               color: AppColors.actionSelected,
               child: Row(
                 children: [
-                  const Icon(Icons.info_outline_rounded, size: 18, color: AppColors.actionPrimary),
+                  Icon(Icons.info_outline_rounded, size: 18, color: AppColors.actionPrimary),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(

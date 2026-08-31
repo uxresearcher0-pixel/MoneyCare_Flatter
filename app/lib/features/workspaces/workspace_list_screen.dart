@@ -39,7 +39,7 @@ class _WorkspaceListScreenState extends ConsumerState<WorkspaceListScreen> {
         titleTextStyle: AppTextStyles.h2,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_rounded, color: AppColors.actionPrimary, size: 26),
+            icon: Icon(Icons.add_circle_rounded, color: AppColors.actionPrimary, size: 26),
             onPressed: () => context.push('/workspace/create'),
           ),
         ],
@@ -58,7 +58,7 @@ class _WorkspaceListScreenState extends ConsumerState<WorkspaceListScreen> {
               contentPadding: const EdgeInsets.symmetric(vertical: 0),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.borderDefault),
+                borderSide: BorderSide(color: AppColors.borderDefault),
               ),
             ),
           ),
@@ -106,7 +106,7 @@ class _WorkspaceListScreenState extends ConsumerState<WorkspaceListScreen> {
                     children: [
                       Row(
                         children: [
-                          const AppAvatar(
+                          AppAvatar(
                             icon: Icons.family_restroom_rounded,
                             size: 44,
                             shape: BoxShape.rectangle,
@@ -125,7 +125,7 @@ class _WorkspaceListScreenState extends ConsumerState<WorkspaceListScreen> {
                               ],
                             ),
                           ),
-                          const Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
+                          Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
                         ],
                       ),
                       const SizedBox(height: 10),

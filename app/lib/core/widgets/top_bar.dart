@@ -61,7 +61,7 @@ class GreetingTopBar extends StatelessWidget implements PreferredSizeWidget {
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    const Icon(Icons.notifications_outlined, size: 18, color: AppColors.textPrimary),
+                    Icon(Icons.notifications_outlined, size: 18, color: AppColors.textPrimary),
                     if (hasNotification)
                       Positioned(
                         right: 9,
@@ -69,7 +69,7 @@ class GreetingTopBar extends StatelessWidget implements PreferredSizeWidget {
                         child: Container(
                           width: 6,
                           height: 6,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: AppColors.statusNegative,
                             shape: BoxShape.circle,
                           ),

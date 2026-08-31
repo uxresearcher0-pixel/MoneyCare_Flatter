@@ -99,18 +99,18 @@ class LinkButton extends StatelessWidget {
     super.key,
     required this.label,
     this.onPressed,
-    this.color = AppColors.actionPrimary,
+    this.color,
   });
 
   final String label;
   final VoidCallback? onPressed;
-  final Color color;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
-      child: Text(label, style: AppTextStyles.labelSemibold.copyWith(color: color)),
+      child: Text(label, style: AppTextStyles.labelSemibold.copyWith(color: color ?? AppColors.actionPrimary)),
     );
   }
 }

@@ -25,7 +25,7 @@ class ProjectMembersScreen extends ConsumerWidget {
         title: 'Members & roles',
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.actionPrimary),
+            icon: Icon(Icons.person_add_alt_1_rounded, color: AppColors.actionPrimary),
             onPressed: () => context.push('/project/$projectId/people/add'),
           ),
         ],

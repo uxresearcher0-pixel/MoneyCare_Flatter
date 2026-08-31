@@ -69,7 +69,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
                 project.description = _description.text.trim();
                 appData.setActiveProject(project.id); // triggers notifyListeners
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Project details saved'), backgroundColor: AppColors.actionPrimary),
+                  SnackBar(content: Text('Project details saved'), backgroundColor: AppColors.actionPrimary),
                 );
                 context.pop();
               },

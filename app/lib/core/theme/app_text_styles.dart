@@ -10,13 +10,13 @@ class AppTextStyles {
     required double size,
     required FontWeight weight,
     double? height,
-    Color color = AppColors.textPrimary,
+    Color? color,
   }) {
     return GoogleFonts.inter(
       fontSize: size,
       fontWeight: weight,
       height: height,
-      color: color,
+      color: color ?? AppColors.textPrimary,
       // Inter has no Bengali glyphs, so the ৳ (Bangladeshi Taka) sign used
       // throughout the app needs an explicit fallback family or it renders
       // as a tofu box wherever the platform doesn't already pick one on its

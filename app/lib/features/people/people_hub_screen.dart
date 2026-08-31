@@ -96,7 +96,7 @@ class _PeopleHubScreenState extends ConsumerState<PeopleHubScreen> {
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: AppColors.borderDefault),
+                  borderSide: BorderSide(color: AppColors.borderDefault),
                 ),
               ),
             ),

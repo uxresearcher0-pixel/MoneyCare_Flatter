@@ -31,15 +31,10 @@ class TransactionDetailsScreen extends ConsumerWidget {
     final period = appData.activePeriod;
 
     return Scaffold(
-      appBar: SimpleTopBar(
-        title: 'Transaction Details',
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_horiz_rounded),
-            onPressed: () {},
-          ),
-        ],
-      ),
+      // No overflow menu here: Edit/Duplicate/Delete are already primary,
+      // visible actions at the bottom of this screen — a "..." menu with no
+      // extra actions behind it would just be a dead affordance.
+      appBar: const SimpleTopBar(title: 'Transaction Details'),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -153,7 +148,7 @@ class TransactionDetailsScreen extends ConsumerWidget {
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(40),
                           foregroundColor: AppColors.statusNegative,
-                          side: const BorderSide(color: AppColors.statusNegative),
+                          side: BorderSide(color: AppColors.statusNegative),
                         ),
                       ),
                     ),
@@ -221,7 +216,7 @@ class _MetaRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: showDivider
-          ? const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.borderDefault)))
+          ? BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.borderDefault)))
           : null,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,

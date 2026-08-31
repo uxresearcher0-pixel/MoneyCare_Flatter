@@ -59,7 +59,7 @@ class AppearanceScreen extends ConsumerWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.info_outline_rounded, size: 16, color: AppColors.actionPrimary),
+                Icon(Icons.info_outline_rounded, size: 16, color: AppColors.actionPrimary),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(

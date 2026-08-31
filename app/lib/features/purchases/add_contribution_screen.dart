@@ -72,7 +72,7 @@ class _AddContributionScreenState extends ConsumerState<AddContributionScreen> {
                   decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
-                      const Icon(Icons.auto_awesome_rounded, size: 20, color: AppColors.actionPrimary),
+                      Icon(Icons.auto_awesome_rounded, size: 20, color: AppColors.actionPrimary),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Column(
@@ -186,7 +186,7 @@ class _AddContributionScreenState extends ConsumerState<AddContributionScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.repeat_rounded, size: 20, color: AppColors.actionPrimary),
+                      Icon(Icons.repeat_rounded, size: 20, color: AppColors.actionPrimary),
                       const SizedBox(width: 8),
                       Expanded(
                         child: DropdownButtonHideUnderline(
@@ -209,7 +209,7 @@ class _AddContributionScreenState extends ConsumerState<AddContributionScreen> {
                   decoration: BoxDecoration(color: AppColors.surfaceSubtle, borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline_rounded, size: 19, color: AppColors.actionPrimary),
+                      Icon(Icons.info_outline_rounded, size: 19, color: AppColors.actionPrimary),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -225,7 +225,7 @@ class _AddContributionScreenState extends ConsumerState<AddContributionScreen> {
           ),
           Container(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColors.surface,
               border: Border(top: BorderSide(color: AppColors.borderDefault)),
             ),

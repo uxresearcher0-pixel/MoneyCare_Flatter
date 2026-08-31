@@ -67,7 +67,7 @@ class CategoriesScreen extends ConsumerWidget {
         title: 'Categories',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.actionPrimary),
+            icon: Icon(Icons.add_rounded, color: AppColors.actionPrimary),
             onPressed: () => _addCategory(context, ref),
           ),
         ],
@@ -85,7 +85,7 @@ class CategoriesScreen extends ConsumerWidget {
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(color: AppColors.statusNegativeBg, borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
+              child: Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
             ),
             onDismissed: (_) => appData.deleteCategory(c.id),
             child: AppCard(
@@ -95,7 +95,7 @@ class CategoriesScreen extends ConsumerWidget {
                   AppAvatar(icon: c.icon, size: 32),
                   const SizedBox(width: 12),
                   Expanded(child: Text(c.name, style: AppTextStyles.labelSemibold)),
-                  const Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
+                  Icon(Icons.edit_outlined, size: 18, color: AppColors.textSecondary),
                 ],
               ),
             ),

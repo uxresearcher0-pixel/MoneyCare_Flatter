@@ -1,33 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/cards.dart';
 import '../../core/widgets/top_bar.dart';
-
-class _WorkspaceField {
-  const _WorkspaceField(this.name, this.type, this.detail);
-  final String name;
-  final String type;
-  final String detail;
-}
-
-const _fields = [
-  _WorkspaceField('Household ID', 'Text', 'Shared reference across all projects'),
-  _WorkspaceField('Default Currency', 'Dropdown', '৳ BDT for every new project'),
-  _WorkspaceField('Fiscal Year Start', 'Date', 'Used for yearly reports'),
-];
+import '../../data/models/models.dart';
+import '../../data/providers/app_data.dart';
 
 /// 12 Settings / Workspace Custom Fields
 ///
 /// Distinct from Project Fields — these apply workspace-wide, to every
 /// project created inside it, rather than to a single project.
-class WorkspaceCustomFieldsScreen extends StatelessWidget {
+class WorkspaceCustomFieldsScreen extends ConsumerWidget {
   const WorkspaceCustomFieldsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final appData = ref.watch(appDataProvider);
+    final fields = appData.customFields.values.where((f) => f.scope == CustomFieldScope.workspace).toList();
+
     return Scaffold(
       appBar: const SimpleTopBar(title: 'Workspace custom fields'),
       body: ListView(
@@ -38,32 +31,43 @@ class WorkspaceCustomFieldsScreen extends StatelessWidget {
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: 16),
-          for (final field in _fields)
+          for (final field in fields)
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
-              child: AppCard(
-                onTap: () => context.push('/config/field-editor'),
-                child: Row(
-                  children: [
-                    const AppAvatar(icon: Icons.workspaces_rounded, size: 36, shape: BoxShape.rectangle),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(field.name, style: AppTextStyles.labelSemibold),
-                          Text(field.detail, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
-                        ],
+              child: Dismissible(
+                key: ValueKey(field.id),
+                direction: DismissDirection.endToStart,
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(color: AppColors.statusNegativeBg, borderRadius: BorderRadius.circular(8)),
+                  child: Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
+                ),
+                onDismissed: (_) => appData.deleteCustomField(field.id),
+                child: AppCard(
+                  onTap: () => context.push('/config/field-editor?id=${field.id}'),
+                  child: Row(
+                    children: [
+                      const AppAvatar(icon: Icons.workspaces_rounded, size: 36, shape: BoxShape.rectangle),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(field.name, style: AppTextStyles.labelSemibold),
+                            Text(field.detail, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary)),
+                          ],
+                        ),
                       ),
-                    ),
-                    StatusBadge.neutral(field.type),
-                  ],
+                      StatusBadge.neutral(field.type),
+                    ],
+                  ),
                 ),
               ),
             ),
           const SizedBox(height: 8),
           OutlinedButton.icon(
-            onPressed: () => context.push('/config/custom-field-builder'),
+            onPressed: () => context.push('/config/custom-field-builder?scope=workspace'),
             icon: const Icon(Icons.add_rounded, size: 18),
             label: const Text('Add workspace field'),
             style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(48)),

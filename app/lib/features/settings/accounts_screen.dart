@@ -60,7 +60,7 @@ class AccountsScreen extends ConsumerWidget {
         title: 'Accounts & wallets',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.actionPrimary),
+            icon: Icon(Icons.add_rounded, color: AppColors.actionPrimary),
             onPressed: () => _addAccount(context, ref),
           ),
         ],
@@ -78,7 +78,7 @@ class AccountsScreen extends ConsumerWidget {
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               decoration: BoxDecoration(color: AppColors.statusNegativeBg, borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
+              child: Icon(Icons.delete_outline_rounded, color: AppColors.statusNegative),
             ),
             onDismissed: (_) => appData.deleteAccount(a.id),
             child: AppCard(
