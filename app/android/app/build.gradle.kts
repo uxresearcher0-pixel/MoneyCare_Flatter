@@ -1,3 +1,4 @@
+import java.util.Base64
 import java.util.Properties
 
 plugins {
@@ -27,7 +28,11 @@ if (hasCiSigning) {
     // Materialize the keystore from the CI secret into a gitignored path.
     val decodedKeystore = layout.buildDirectory.file("release-signing/release.jks").get().asFile
     decodedKeystore.parentFile.mkdirs()
-    decodedKeystore.writeBytes(java.util.Base64.getDecoder().decode(releaseKeystoreBase64))
+    // Imported explicitly (Base64, not fully-qualified java.util.Base64) —
+    // the Android Gradle plugin injects a `java` extension property on
+    // Project that shadows the `java` package name for fully-qualified
+    // references in this script, breaking `java.util.X` lookups.
+    decodedKeystore.writeBytes(Base64.getDecoder().decode(releaseKeystoreBase64))
 }
 
 android {
