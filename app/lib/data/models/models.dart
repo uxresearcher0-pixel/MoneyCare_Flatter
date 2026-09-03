@@ -1,3 +1,13 @@
+// This reconstructs IconData from stored (not literal) values by design —
+// see the comment on _iconFromMap below — which is exactly the pattern
+// `non_const_argument_for_const_parameter` exists to flag (it normally
+// means "the icon tree-shaker can't see this icon coming and will strip
+// it"). Release builds already pass --no-tree-shake-icons for this reason
+// (see the CI workflow), so the warning has no build-time consequence here;
+// silenced file-wide since it would otherwise fire on every field of every
+// icon this file deserializes.
+// ignore_for_file: non_const_argument_for_const_parameter
+
 import 'package:flutter/material.dart';
 
 // ---- Icon (de)serialization helpers ---------------------------------

@@ -151,10 +151,10 @@ class AppData extends ChangeNotifier {
       ).where((t) => t.type == TransactionType.contribution).toList();
 
   num totalPurchases(String periodId) =>
-      purchasesInPeriod(periodId).fold<num>(0, (sum, t) => sum + t.amount);
+      purchasesInPeriod(periodId).fold<num>(0, (total, t) => total + t.amount);
 
   num totalContributions(String periodId) =>
-      contributionsInPeriod(periodId).fold<num>(0, (sum, t) => sum + t.amount);
+      contributionsInPeriod(periodId).fold<num>(0, (total, t) => total + t.amount);
 
   num availableBalance(String periodId) {
     final period = periods[periodId];
