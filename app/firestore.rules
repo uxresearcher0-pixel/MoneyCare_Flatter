@@ -1,0 +1,63 @@
+rules_version = '2';
+
+// Money Care — Firestore security rules.
+//
+// Paste this whole file into: Firebase Console → your project → Firestore
+// Database → Rules tab → replace everything → Publish. The "Start in test
+// mode" rules you began with allow ANY signed-in-or-not client to read and
+// write everything for 30 days — fine for getting the database created, but
+// not something to ship with. These rules replace that with:
+//   - a user can only read/write their own profile doc
+//   - a household's data is only readable/writable by its members
+//   - a non-member CAN join a household (by invite code) — but the only
+//     change that specific write is allowed to make is adding their own uid
+//     to the member list, nothing else
+//   - invite codes are a separate tiny collection so looking one up doesn't
+//     require exposing a whole household's financial data first
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isMember(householdData) {
+      return signedIn() && request.auth.uid in householdData.memberIds;
+    }
+
+    // A user's own profile, prefs and per-user notification inbox.
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // code -> householdId lookup used by the "Join a household" flow.
+    // Readable by any signed-in user (that's the point — you need to be
+    // able to look up a code someone shared with you); never listable
+    // (doc id has to be known already) and never editable/removable by
+    // clients once created.
+    match /invites/{code} {
+      allow get: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if false;
+    }
+
+    match /households/{householdId} {
+      allow read: if isMember(resource.data);
+
+      allow create: if signedIn()
+        && request.auth.uid in request.resource.data.memberIds;
+
+      // Existing members can change anything. A non-member's update is
+      // only ever allowed if the sole effect is appending their own uid
+      // to memberIds (the join-by-code flow) — everything else about the
+      // document must stay byte-for-byte identical.
+      allow update: if isMember(resource.data)
+        || (signedIn()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberIds'])
+            && request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1
+            && request.resource.data.memberIds.hasAll(resource.data.memberIds)
+            && request.auth.uid in request.resource.data.memberIds);
+
+      allow delete: if false;
+    }
+  }
+}

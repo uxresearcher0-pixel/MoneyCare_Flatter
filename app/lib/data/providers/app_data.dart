@@ -1,3 +1,8 @@
+import 'dart:async';
+import 'dart:math';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -6,20 +11,58 @@ import '../models/models.dart';
 
 const _uuid = Uuid();
 
-/// In-memory application data store. Seeded with sample data that mirrors
-/// the Figma "Monthly Grocery" example so every screen renders realistic
-/// content out of the box. Swap this for a real backend/repository layer
-/// later without touching the UI.
+/// Set from main.dart before runApp(), once Firebase.initializeApp() has
+/// been attempted. True only when a Firebase app actually initialized for
+/// this platform (Android today — see firebase_options.dart). AppData reads
+/// this once, at construction, to choose between:
+///  - real Firebase Auth + Firestore-backed sync: accounts, nothing is lost
+///    when the app closes, and a household's members see each other's
+///    changes live, or
+///  - the original local-only in-memory demo mode, used wherever there's no
+///    registered Firebase app yet (web/desktop).
+bool firebaseEnabled = false;
+
+Map<String, T> _decodeMap<T>(dynamic raw, T Function(Map<String, dynamic>) fromMap) {
+  final result = <String, T>{};
+  if (raw is Map) {
+    raw.forEach((key, value) {
+      if (value is Map) {
+        result[key.toString()] = fromMap(Map<String, dynamic>.from(value));
+      }
+    });
+  }
+  return result;
+}
+
+List<String> _stringList(dynamic value) =>
+    (value as List?)?.map((e) => e.toString()).toList() ?? <String>[];
+
+String _generateInviteCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I — easy to read aloud
+  final rand = Random.secure();
+  return List.generate(6, (_) => chars[rand.nextInt(chars.length)]).join();
+}
+
+/// Application data store. Two backends behind one API so every screen in
+/// the app can call the same methods either way:
+///  - Firebase mode (`firebaseEnabled`): real Firebase Auth + a Firestore
+///    document per household that every member's device listens to in
+///    real time. Every mutator below applies the change locally *and*
+///    pushes it to Firestore; the Firestore listener then re-applies the
+///    authoritative state (own writes included) so collaborators' changes
+///    show up live without a manual refresh.
+///  - Local demo mode (web/desktop, no Firebase project registered yet):
+///    exactly the original in-memory behaviour, seeded with sample data.
 class AppData extends ChangeNotifier {
   AppData() {
-    _seed();
+    if (firebaseEnabled) {
+      _authSub = fb_auth.FirebaseAuth.instance.authStateChanges().listen(_onAuthChanged);
+    } else {
+      _seedLocalDemo();
+    }
   }
 
-  final AppUser currentUser = const AppUser(
-    id: 'u1',
-    name: 'Shanto',
-    email: 'shanto@example.com',
-  );
+  AppUser currentUser = const AppUser(id: '', name: '', email: '');
 
   final Map<String, Workspace> workspaces = {};
   final Map<String, Project> projects = {};
@@ -40,6 +83,35 @@ class AppData extends ChangeNotifier {
 
   bool isAuthenticated = false;
   bool hasSeenOnboarding = false;
+
+  // ---- Firebase-backed sync state --------------------------------------
+
+  StreamSubscription<fb_auth.User?>? _authSub;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userDocSub;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _householdSub;
+  fb_auth.User? _fbUser;
+  String? _householdId;
+  String? _savedActiveWorkspaceId;
+  String? _savedActiveProjectId;
+
+  /// Household display name (Firebase mode only).
+  String householdName = '';
+
+  /// Members of the currently-loaded household (Firebase mode only).
+  List<String> householdMemberIds = [];
+
+  /// Shareable 6-character code other users enter to join this household.
+  String householdInviteCode = '';
+
+  bool get isFirebaseBacked => firebaseEnabled;
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    _userDocSub?.cancel();
+    _householdSub?.cancel();
+    super.dispose();
+  }
 
   Workspace? get activeWorkspace => workspaces[activeWorkspaceId];
   Project? get activeProject => projects[activeProjectId];
@@ -110,21 +182,394 @@ class AppData extends ChangeNotifier {
     return result;
   }
 
-  // ---- Mutations -----------------------------------------------------
+  // ---- Auth (Firebase mode) ---------------------------------------------
 
+  Future<void> signUpWithEmail({
+    required String name,
+    required String email,
+    required String password,
+  }) async {
+    final cred = await fb_auth.FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: email.trim(),
+      password: password,
+    );
+    await cred.user?.updateDisplayName(name.trim());
+  }
+
+  Future<void> signInWithEmail({required String email, required String password}) {
+    return fb_auth.FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email.trim(),
+      password: password,
+    );
+  }
+
+  Future<void> sendPasswordReset(String email) {
+    return fb_auth.FirebaseAuth.instance.sendPasswordResetEmail(email: email.trim());
+  }
+
+  /// Demo-mode-only fake sign-in — used on platforms with no Firebase
+  /// project registered yet (see firebaseEnabled). Real builds call
+  /// signInWithEmail/signUpWithEmail instead.
   void signIn() {
+    if (firebaseEnabled) return;
     isAuthenticated = true;
     notifyListeners();
   }
 
   void signOut() {
+    if (firebaseEnabled) {
+      unawaited(fb_auth.FirebaseAuth.instance.signOut());
+      return;
+    }
     isAuthenticated = false;
     notifyListeners();
   }
 
+  Future<void> _onAuthChanged(fb_auth.User? user) async {
+    await _userDocSub?.cancel();
+    await _householdSub?.cancel();
+    _userDocSub = null;
+    _householdSub = null;
+
+    if (user == null) {
+      _fbUser = null;
+      _householdId = null;
+      _savedActiveWorkspaceId = null;
+      _savedActiveProjectId = null;
+      isAuthenticated = false;
+      _clearAllData();
+      notifyListeners();
+      return;
+    }
+
+    _fbUser = user;
+    final displayName = user.displayName?.trim();
+    currentUser = AppUser(
+      id: user.uid,
+      name: (displayName != null && displayName.isNotEmpty)
+          ? displayName
+          : (user.email?.split('@').first ?? 'You'),
+      email: user.email ?? '',
+    );
+    isAuthenticated = true;
+    notifyListeners();
+
+    final userRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+    _userDocSub = userRef.snapshots().listen((snap) => _onUserDocChanged(snap, userRef));
+  }
+
+  Future<void> _onUserDocChanged(
+    DocumentSnapshot<Map<String, dynamic>> snap,
+    DocumentReference<Map<String, dynamic>> ref,
+  ) async {
+    final data = snap.data();
+    if (data == null) {
+      // First sign-in ever for this account: stand up a brand-new household
+      // and the user's profile doc together. Wrapped defensively — this
+      // runs inside a stream callback, so an unhandled failure here (e.g. a
+      // transient network drop, or Firestore rules not published yet)
+      // would otherwise surface as an unhandled Future rejection rather
+      // than something the UI can react to. The listener fires again next
+      // time the doc changes, so a retry naturally happens on next launch.
+      try {
+        final householdId = await _createHousehold(
+          ownerId: _fbUser!.uid,
+          ownerName: currentUser.name,
+        );
+        await ref.set({
+          'name': currentUser.name,
+          'email': currentUser.email,
+          'householdId': householdId,
+          'hasSeenOnboarding': false,
+          'themeMode': ThemeMode.system.name,
+          'language': 'English',
+          'pushNotificationsEnabled': true,
+          'emailNotificationsEnabled': false,
+          'budgetAlertsEnabled': true,
+          'biometricLockEnabled': false,
+          'largerTextEnabled': false,
+          'highContrastEnabled': false,
+          'reduceMotionEnabled': false,
+          'notifications': [],
+        });
+      } catch (e) {
+        debugPrint('Money Care: failed to create household for new user: $e');
+      }
+      return; // A successful set() above re-triggers this listener with real data.
+    }
+
+    hasSeenOnboarding = data['hasSeenOnboarding'] as bool? ?? false;
+    themeMode = ThemeMode.values.firstWhere(
+      (m) => m.name == data['themeMode'],
+      orElse: () => ThemeMode.system,
+    );
+    language = data['language'] as String? ?? 'English';
+    pushNotificationsEnabled = data['pushNotificationsEnabled'] as bool? ?? true;
+    emailNotificationsEnabled = data['emailNotificationsEnabled'] as bool? ?? false;
+    budgetAlertsEnabled = data['budgetAlertsEnabled'] as bool? ?? true;
+    biometricLockEnabled = data['biometricLockEnabled'] as bool? ?? false;
+    largerTextEnabled = data['largerTextEnabled'] as bool? ?? false;
+    highContrastEnabled = data['highContrastEnabled'] as bool? ?? false;
+    reduceMotionEnabled = data['reduceMotionEnabled'] as bool? ?? false;
+    notifications
+      ..clear()
+      ..addAll(
+        ((data['notifications'] as List?) ?? [])
+            .whereType<Map>()
+            .map((m) => AppNotification.fromMap(Map<String, dynamic>.from(m))),
+      );
+    _savedActiveWorkspaceId = data['activeWorkspaceId'] as String?;
+    _savedActiveProjectId = data['activeProjectId'] as String?;
+
+    final householdId = data['householdId'] as String?;
+    if (householdId != _householdId) {
+      _householdId = householdId;
+      await _householdSub?.cancel();
+      _householdSub = null;
+      if (householdId != null) {
+        _householdSub = FirebaseFirestore.instance
+            .collection('households')
+            .doc(householdId)
+            .snapshots()
+            .listen(_onHouseholdChanged);
+      }
+    }
+    notifyListeners();
+  }
+
+  void _onHouseholdChanged(DocumentSnapshot<Map<String, dynamic>> snap) {
+    final data = snap.data();
+    if (data == null) return;
+
+    householdName = data['name'] as String? ?? 'Household';
+    householdMemberIds = _stringList(data['memberIds']);
+    householdInviteCode = data['inviteCode'] as String? ?? '';
+    currencyCode = data['currencyCode'] as String? ?? 'BDT';
+    currencySymbol = data['currencySymbol'] as String? ?? '৳';
+
+    workspaces
+      ..clear()
+      ..addAll(_decodeMap(data['workspaces'], Workspace.fromMap));
+    for (final ws in workspaces.values) {
+      ws.memberCount = householdMemberIds.isEmpty ? 1 : householdMemberIds.length;
+    }
+    projects
+      ..clear()
+      ..addAll(_decodeMap(data['projects'], Project.fromMap));
+    people
+      ..clear()
+      ..addAll(_decodeMap(data['people'], Person.fromMap));
+    periods
+      ..clear()
+      ..addAll(_decodeMap(data['periods'], Period.fromMap));
+    categories
+      ..clear()
+      ..addAll(_decodeMap(data['categories'], Category.fromMap));
+    transactions
+      ..clear()
+      ..addAll(_decodeMap(data['transactions'], AppTransaction.fromMap));
+    units
+      ..clear()
+      ..addAll(_decodeMap(data['units'], Unit.fromMap));
+    paymentMethods
+      ..clear()
+      ..addAll(_decodeMap(data['paymentMethods'], PaymentMethod.fromMap));
+    contributionTypes
+      ..clear()
+      ..addAll(_decodeMap(data['contributionTypes'], ContributionType.fromMap));
+    txKindConfigs
+      ..clear()
+      ..addAll(_decodeMap(data['txKindConfigs'], TxKindConfig.fromMap));
+    accounts
+      ..clear()
+      ..addAll(_decodeMap(data['accounts'], FundAccount.fromMap));
+    customFields
+      ..clear()
+      ..addAll(_decodeMap(data['customFields'], CustomField.fromMap));
+    recurringRules
+      ..clear()
+      ..addAll(_decodeMap(data['recurringRules'], RecurringRule.fromMap));
+
+    if (activeWorkspaceId == null &&
+        _savedActiveWorkspaceId != null &&
+        workspaces.containsKey(_savedActiveWorkspaceId)) {
+      activeWorkspaceId = _savedActiveWorkspaceId;
+    }
+    if (activeWorkspaceId == null || !workspaces.containsKey(activeWorkspaceId)) {
+      activeWorkspaceId = workspaces.keys.isNotEmpty ? workspaces.keys.first : null;
+    }
+    if (activeProjectId == null &&
+        _savedActiveProjectId != null &&
+        projects.containsKey(_savedActiveProjectId)) {
+      activeProjectId = _savedActiveProjectId;
+    }
+    if (activeProjectId == null || !projects.containsKey(activeProjectId)) {
+      final ws = workspaces[activeWorkspaceId];
+      activeProjectId = (ws != null && ws.projectIds.isNotEmpty) ? ws.projectIds.first : null;
+    }
+
+    notifyListeners();
+  }
+
+  void _clearAllData() {
+    workspaces.clear();
+    projects.clear();
+    people.clear();
+    periods.clear();
+    categories.clear();
+    transactions.clear();
+    units.clear();
+    paymentMethods.clear();
+    contributionTypes.clear();
+    txKindConfigs.clear();
+    accounts.clear();
+    customFields.clear();
+    recurringRules.clear();
+    notifications.clear();
+    activeWorkspaceId = null;
+    activeProjectId = null;
+    householdName = '';
+    householdMemberIds = [];
+    householdInviteCode = '';
+    currentUser = const AppUser(id: '', name: '', email: '');
+    hasSeenOnboarding = false;
+  }
+
+  /// Creates a new household doc (with sensible starter reference lists —
+  /// categories, units, payment methods… — but no fake people or
+  /// transactions) plus one starter workspace/project/period so the rest of
+  /// the app always has somewhere to point at. Returns the new household id.
+  Future<String> _createHousehold({required String ownerId, required String ownerName}) async {
+    final householdRef = FirebaseFirestore.instance.collection('households').doc();
+    final code = _generateInviteCode();
+
+    final wsId = _uuid.v4();
+    final projectId = _uuid.v4();
+    final periodId = _uuid.v4();
+    final now = DateTime.now();
+    final monthStart = DateTime(now.year, now.month, 1);
+    final monthEnd = DateTime(now.year, now.month + 1, 0);
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+
+    final workspace = Workspace(
+      id: wsId,
+      name: "$ownerName's Household",
+      memberCount: 1,
+      projectIds: [projectId],
+    );
+    final project = Project(
+      id: projectId,
+      workspaceId: wsId,
+      name: 'General',
+      description: 'Shared household budget',
+      icon: ProjectIconKind.wallet,
+      periodIds: [periodId],
+      activePeriodId: periodId,
+    );
+    final period = Period(
+      id: periodId,
+      projectId: projectId,
+      label: '${monthNames[now.month - 1]} ${now.year}',
+      startDate: monthStart,
+      endDate: monthEnd,
+    );
+
+    await householdRef.set({
+      'name': "$ownerName's Household",
+      'ownerId': ownerId,
+      'memberIds': [ownerId],
+      'inviteCode': code,
+      'createdAt': FieldValue.serverTimestamp(),
+      'currencyCode': 'BDT',
+      'currencySymbol': '৳',
+      'workspaces': {wsId: workspace.toMap()},
+      'projects': {projectId: project.toMap()},
+      'people': <String, dynamic>{},
+      'periods': {periodId: period.toMap()},
+      'transactions': <String, dynamic>{},
+      'categories': _defaultCategories(),
+      'units': _defaultUnits(),
+      'paymentMethods': _defaultPaymentMethods(),
+      'contributionTypes': _defaultContributionTypes(),
+      'txKindConfigs': _defaultTxKindConfigs(),
+      'accounts': <String, dynamic>{},
+      'customFields': <String, dynamic>{},
+      'recurringRules': <String, dynamic>{},
+    });
+    await FirebaseFirestore.instance
+        .collection('invites')
+        .doc(code)
+        .set({'householdId': householdRef.id});
+    return householdRef.id;
+  }
+
+  /// Joins the household behind a 6-character invite code shared by an
+  /// existing member (see the Household screen). Throws if the code is
+  /// unknown.
+  Future<void> joinHouseholdByCode(String rawCode) async {
+    final code = rawCode.trim().toUpperCase();
+    final invite = await FirebaseFirestore.instance.collection('invites').doc(code).get();
+    if (!invite.exists) {
+      throw Exception('No household found for that invite code.');
+    }
+    final householdId = invite.data()!['householdId'] as String;
+    final uid = _fbUser!.uid;
+    await FirebaseFirestore.instance.collection('households').doc(householdId).update({
+      'memberIds': FieldValue.arrayUnion([uid]),
+    });
+    await FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'householdId': householdId,
+    });
+  }
+
+  // ---- Firestore write-through helpers -----------------------------------
+
+  Future<void> _put(String collection, String id, Map<String, dynamic> map) async {
+    if (!firebaseEnabled || _householdId == null) return;
+    try {
+      await FirebaseFirestore.instance
+          .collection('households')
+          .doc(_householdId)
+          .update({'$collection.$id': map});
+    } catch (_) {
+      // Offline: Firestore's local cache queues the write and retries once
+      // connectivity returns.
+    }
+  }
+
+  Future<void> _remove(String collection, String id) async {
+    if (!firebaseEnabled || _householdId == null) return;
+    try {
+      await FirebaseFirestore.instance
+          .collection('households')
+          .doc(_householdId)
+          .update({'$collection.$id': FieldValue.delete()});
+    } catch (_) {}
+  }
+
+  Future<void> _syncHousehold(Map<String, dynamic> patch) async {
+    if (!firebaseEnabled || _householdId == null) return;
+    try {
+      await FirebaseFirestore.instance.collection('households').doc(_householdId).update(patch);
+    } catch (_) {}
+  }
+
+  Future<void> _syncUserPrefs(Map<String, dynamic> patch) async {
+    if (!firebaseEnabled || _fbUser == null) return;
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(_fbUser!.uid).update(patch);
+    } catch (_) {}
+  }
+
+  // ---- Mutations -----------------------------------------------------
+
   void completeOnboarding() {
     hasSeenOnboarding = true;
     notifyListeners();
+    unawaited(_syncUserPrefs({'hasSeenOnboarding': true}));
   }
 
   void setActiveWorkspace(String id) {
@@ -136,6 +581,7 @@ class AppData extends ChangeNotifier {
       activeProjectId = null;
     }
     notifyListeners();
+    unawaited(_syncUserPrefs({'activeWorkspaceId': id, 'activeProjectId': activeProjectId}));
   }
 
   void setActivePeriod(String projectId, String periodId) {
@@ -144,18 +590,23 @@ class AppData extends ChangeNotifier {
     project.activePeriodId = periodId;
     activeProjectId = projectId;
     notifyListeners();
+    unawaited(_put('projects', project.id, project.toMap()));
+    unawaited(_syncUserPrefs({'activeProjectId': projectId}));
   }
 
   void setActiveProject(String id) {
     activeProjectId = id;
     notifyListeners();
+    unawaited(_syncUserPrefs({'activeProjectId': id}));
   }
 
   Workspace createWorkspace(String name) {
-    final ws = Workspace(id: _uuid.v4(), name: name, memberCount: 1);
+    final memberCount = householdMemberIds.isEmpty ? 1 : householdMemberIds.length;
+    final ws = Workspace(id: _uuid.v4(), name: name, memberCount: memberCount);
     workspaces[ws.id] = ws;
     activeWorkspaceId = ws.id;
     notifyListeners();
+    unawaited(_put('workspaces', ws.id, ws.toMap()));
     return ws;
   }
 
@@ -178,6 +629,9 @@ class AppData extends ChangeNotifier {
     workspaces[workspaceId]?.projectIds.add(project.id);
     activeProjectId = project.id;
     notifyListeners();
+    unawaited(_put('projects', project.id, project.toMap()));
+    final ws = workspaces[workspaceId];
+    if (ws != null) unawaited(_put('workspaces', ws.id, ws.toMap()));
     return project;
   }
 
@@ -205,6 +659,9 @@ class AppData extends ChangeNotifier {
       projects[projectId]?.activePeriodId = period.id;
     }
     notifyListeners();
+    unawaited(_put('periods', period.id, period.toMap()));
+    final project = projects[projectId];
+    if (project != null) unawaited(_put('projects', project.id, project.toMap()));
     return period;
   }
 
@@ -225,6 +682,9 @@ class AppData extends ChangeNotifier {
     people[person.id] = person;
     projects[projectId]?.memberIds.add(person.id);
     notifyListeners();
+    unawaited(_put('people', person.id, person.toMap()));
+    final project = projects[projectId];
+    if (project != null) unawaited(_put('projects', project.id, project.toMap()));
     return person;
   }
 
@@ -254,6 +714,7 @@ class AppData extends ChangeNotifier {
     );
     transactions[t.id] = t;
     notifyListeners();
+    unawaited(_put('transactions', t.id, t.toMap()));
     return t;
   }
 
@@ -278,6 +739,7 @@ class AppData extends ChangeNotifier {
     );
     transactions[t.id] = t;
     notifyListeners();
+    unawaited(_put('transactions', t.id, t.toMap()));
     return t;
   }
 
@@ -293,11 +755,13 @@ class AppData extends ChangeNotifier {
     if (contributionType != null) person.contributionType = contributionType;
     if (monthlyPledge != null) person.monthlyPledge = monthlyPledge;
     notifyListeners();
+    unawaited(_put('people', person.id, person.toMap()));
   }
 
   void deleteTransaction(String id) {
     transactions.remove(id);
     notifyListeners();
+    unawaited(_remove('transactions', id));
   }
 
   void updateTransaction(
@@ -314,6 +778,7 @@ class AppData extends ChangeNotifier {
     if (categoryId != null) t.categoryId = categoryId;
     if (note != null) t.note = note;
     notifyListeners();
+    unawaited(_put('transactions', t.id, t.toMap()));
   }
 
   AppTransaction duplicateTransaction(String id) {
@@ -334,6 +799,7 @@ class AppData extends ChangeNotifier {
     );
     transactions[copy.id] = copy;
     notifyListeners();
+    unawaited(_put('transactions', copy.id, copy.toMap()));
     return copy;
   }
 
@@ -341,87 +807,103 @@ class AppData extends ChangeNotifier {
     final cat = Category(id: _uuid.v4(), name: name, icon: icon);
     categories[cat.id] = cat;
     notifyListeners();
+    unawaited(_put('categories', cat.id, cat.toMap()));
     return cat;
   }
 
   void deleteCategory(String id) {
     categories.remove(id);
     notifyListeners();
+    unawaited(_remove('categories', id));
   }
 
   void renameCategory(String id, String name) {
     final existing = categories[id];
     if (existing == null) return;
-    categories[id] = Category(id: existing.id, name: name, icon: existing.icon, budget: existing.budget);
+    final updated = Category(id: existing.id, name: name, icon: existing.icon, budget: existing.budget);
+    categories[id] = updated;
     notifyListeners();
+    unawaited(_put('categories', updated.id, updated.toMap()));
   }
 
   Unit addUnit(String name, String abbr) {
     final unit = Unit(id: _uuid.v4(), name: name, abbr: abbr);
     units[unit.id] = unit;
     notifyListeners();
+    unawaited(_put('units', unit.id, unit.toMap()));
     return unit;
   }
 
   void deleteUnit(String id) {
     units.remove(id);
     notifyListeners();
+    unawaited(_remove('units', id));
   }
 
   PaymentMethod addPaymentMethod(String name, {IconData icon = Icons.payments_outlined}) {
     final method = PaymentMethod(id: _uuid.v4(), name: name, icon: icon);
     paymentMethods[method.id] = method;
     notifyListeners();
+    unawaited(_put('paymentMethods', method.id, method.toMap()));
     return method;
   }
 
   void deletePaymentMethod(String id) {
     paymentMethods.remove(id);
     notifyListeners();
+    unawaited(_remove('paymentMethods', id));
   }
 
   ContributionType addContributionType(String name, String description, {IconData icon = Icons.label_rounded}) {
     final type = ContributionType(id: _uuid.v4(), name: name, description: description, icon: icon);
     contributionTypes[type.id] = type;
     notifyListeners();
+    unawaited(_put('contributionTypes', type.id, type.toMap()));
     return type;
   }
 
   void deleteContributionType(String id) {
     contributionTypes.remove(id);
     notifyListeners();
+    unawaited(_remove('contributionTypes', id));
   }
 
   void renameContributionType(String id, String name, String description) {
     final existing = contributionTypes[id];
     if (existing == null) return;
-    contributionTypes[id] = ContributionType(id: existing.id, name: name, description: description, icon: existing.icon);
+    final updated = ContributionType(id: existing.id, name: name, description: description, icon: existing.icon);
+    contributionTypes[id] = updated;
     notifyListeners();
+    unawaited(_put('contributionTypes', updated.id, updated.toMap()));
   }
 
   void setTxKindEnabled(String id, bool enabled) {
     final existing = txKindConfigs[id];
     if (existing == null) return;
-    txKindConfigs[id] = TxKindConfig(
+    final updated = TxKindConfig(
       id: existing.id,
       name: existing.name,
       description: existing.description,
       icon: existing.icon,
       enabled: enabled,
     );
+    txKindConfigs[id] = updated;
     notifyListeners();
+    unawaited(_put('txKindConfigs', updated.id, updated.toMap()));
   }
 
   FundAccount addAccount(String name, {num balance = 0, IconData icon = Icons.account_balance_wallet_rounded}) {
     final account = FundAccount(id: _uuid.v4(), name: name, balance: balance, icon: icon);
     accounts[account.id] = account;
     notifyListeners();
+    unawaited(_put('accounts', account.id, account.toMap()));
     return account;
   }
 
   void deleteAccount(String id) {
     accounts.remove(id);
     notifyListeners();
+    unawaited(_remove('accounts', id));
   }
 
   CustomField addCustomField(
@@ -443,13 +925,14 @@ class AppData extends ChangeNotifier {
     );
     customFields[field.id] = field;
     notifyListeners();
+    unawaited(_put('customFields', field.id, field.toMap()));
     return field;
   }
 
   void updateCustomField(String id, {String? name, String? type, bool? required}) {
     final existing = customFields[id];
     if (existing == null) return;
-    customFields[id] = CustomField(
+    final updated = CustomField(
       id: existing.id,
       name: name ?? existing.name,
       type: type ?? existing.type,
@@ -458,42 +941,51 @@ class AppData extends ChangeNotifier {
       required: required ?? existing.required,
       options: existing.options,
     );
+    customFields[id] = updated;
     notifyListeners();
+    unawaited(_put('customFields', updated.id, updated.toMap()));
   }
 
   void deleteCustomField(String id) {
     customFields.remove(id);
     notifyListeners();
+    unawaited(_remove('customFields', id));
   }
 
   RecurringRule addRecurringRule(String title, String schedule, num amount) {
     final rule = RecurringRule(id: _uuid.v4(), title: title, schedule: schedule, amount: amount);
     recurringRules[rule.id] = rule;
     notifyListeners();
+    unawaited(_put('recurringRules', rule.id, rule.toMap()));
     return rule;
   }
 
   void setRecurringRuleEnabled(String id, bool enabled) {
     final existing = recurringRules[id];
     if (existing == null) return;
-    recurringRules[id] = RecurringRule(
+    final updated = RecurringRule(
       id: existing.id,
       title: existing.title,
       schedule: existing.schedule,
       amount: existing.amount,
       enabled: enabled,
     );
+    recurringRules[id] = updated;
     notifyListeners();
+    unawaited(_put('recurringRules', updated.id, updated.toMap()));
   }
 
   void deleteRecurringRule(String id) {
     recurringRules.remove(id);
     notifyListeners();
+    unawaited(_remove('recurringRules', id));
   }
 
   void removePersonFromProject(String projectId, String personId) {
     projects[projectId]?.memberIds.remove(personId);
     notifyListeners();
+    final project = projects[projectId];
+    if (project != null) unawaited(_put('projects', project.id, project.toMap()));
   }
 
   void archiveProject(String id) {
@@ -509,6 +1001,7 @@ class AppData extends ChangeNotifier {
       if (activeProjectId == '') activeProjectId = null;
     }
     notifyListeners();
+    unawaited(_put('projects', project.id, project.toMap()));
   }
 
   void unarchiveProject(String id) {
@@ -516,6 +1009,7 @@ class AppData extends ChangeNotifier {
     if (project == null) return;
     project.isArchived = false;
     notifyListeners();
+    unawaited(_put('projects', project.id, project.toMap()));
   }
 
   void updatePeriodBudget(String periodId, num amount) {
@@ -523,6 +1017,7 @@ class AppData extends ChangeNotifier {
     if (period == null) return;
     period.monthlyBudget = amount;
     notifyListeners();
+    unawaited(_put('periods', period.id, period.toMap()));
   }
 
   void closePeriod(String periodId) {
@@ -530,6 +1025,7 @@ class AppData extends ChangeNotifier {
     if (period == null) return;
     period.isActive = false;
     notifyListeners();
+    unawaited(_put('periods', period.id, period.toMap()));
   }
 
   // ---- Preferences -----------------------------------------------------
@@ -539,8 +1035,12 @@ class AppData extends ChangeNotifier {
   void setThemeMode(ThemeMode mode) {
     themeMode = mode;
     notifyListeners();
+    unawaited(_syncUserPrefs({'themeMode': mode.name}));
   }
 
+  // Currency is shared across the whole household (it's the ledger's unit
+  // of account, not a personal display preference) — synced onto the
+  // household doc itself rather than per-user.
   String currencyCode = 'BDT';
   String currencySymbol = '৳';
   String language = 'English';
@@ -549,11 +1049,13 @@ class AppData extends ChangeNotifier {
     currencyCode = code;
     currencySymbol = symbol;
     notifyListeners();
+    unawaited(_syncHousehold({'currencyCode': code, 'currencySymbol': symbol}));
   }
 
   void setLanguage(String value) {
     language = value;
     notifyListeners();
+    unawaited(_syncUserPrefs({'language': value}));
   }
 
   bool pushNotificationsEnabled = true;
@@ -570,6 +1072,11 @@ class AppData extends ChangeNotifier {
     if (highContrast != null) highContrastEnabled = highContrast;
     if (reduceMotion != null) reduceMotionEnabled = reduceMotion;
     notifyListeners();
+    unawaited(_syncUserPrefs({
+      'largerTextEnabled': largerTextEnabled,
+      'highContrastEnabled': highContrastEnabled,
+      'reduceMotionEnabled': reduceMotionEnabled,
+    }));
   }
 
   void setPreference({
@@ -583,6 +1090,12 @@ class AppData extends ChangeNotifier {
     if (budgetAlerts != null) budgetAlertsEnabled = budgetAlerts;
     if (biometricLock != null) biometricLockEnabled = biometricLock;
     notifyListeners();
+    unawaited(_syncUserPrefs({
+      'pushNotificationsEnabled': pushNotificationsEnabled,
+      'emailNotificationsEnabled': emailNotificationsEnabled,
+      'budgetAlertsEnabled': budgetAlertsEnabled,
+      'biometricLockEnabled': biometricLockEnabled,
+    }));
   }
 
   // ---- Notifications -----------------------------------------------------
@@ -594,6 +1107,7 @@ class AppData extends ChangeNotifier {
       if (n.id == id) n.read = true;
     }
     notifyListeners();
+    _syncNotifications();
   }
 
   void markAllNotificationsRead() {
@@ -601,13 +1115,107 @@ class AppData extends ChangeNotifier {
       n.read = true;
     }
     notifyListeners();
+    _syncNotifications();
+  }
+
+  void _syncNotifications() {
+    unawaited(_syncUserPrefs({'notifications': notifications.map((n) => n.toMap()).toList()}));
   }
 
   int get unreadNotificationCount => notifications.where((n) => !n.read).length;
 
-  // ---- Seed data -------------------------------------------------------
+  // ---- Default reference lists (Firebase mode: new household seed) -------
+  // These are genuinely reusable starting options (like a to-do app's
+  // default lists) — not the fake people/transactions the local demo below
+  // uses. A brand-new household gets these plus nothing else.
 
-  void _seed() {
+  Map<String, dynamic> _defaultCategories() => {
+        'fish': const Category(id: 'fish', name: 'Fish & meat', icon: Icons.set_meal_rounded).toMap(),
+        'rice': const Category(id: 'rice', name: 'Rice & lentils', icon: Icons.inventory_2_rounded).toMap(),
+        'utility': const Category(id: 'utility', name: 'Utility', icon: Icons.bolt_rounded).toMap(),
+        'household': const Category(id: 'household', name: 'Household', icon: Icons.home_rounded).toMap(),
+        'produce': const Category(id: 'produce', name: 'Vegetables & fruits', icon: Icons.eco_rounded).toMap(),
+        'transport': const Category(id: 'transport', name: 'Transport', icon: Icons.directions_car_rounded).toMap(),
+      };
+
+  Map<String, dynamic> _defaultUnits() => {
+        'kg': const Unit(id: 'kg', name: 'Kilogram', abbr: 'kg').toMap(),
+        'l': const Unit(id: 'l', name: 'Litre', abbr: 'L').toMap(),
+        'pcs': const Unit(id: 'pcs', name: 'Piece', abbr: 'pcs').toMap(),
+        'g': const Unit(id: 'g', name: 'Gram', abbr: 'g').toMap(),
+        'dz': const Unit(id: 'dz', name: 'Dozen', abbr: 'dz').toMap(),
+        'pack': const Unit(id: 'pack', name: 'Pack', abbr: 'pack').toMap(),
+      };
+
+  Map<String, dynamic> _defaultPaymentMethods() => {
+        'cash': const PaymentMethod(id: 'cash', name: 'Cash', icon: Icons.payments_outlined).toMap(),
+        'bank': const PaymentMethod(id: 'bank', name: 'Bank transfer', icon: Icons.account_balance_outlined).toMap(),
+        'mobile': const PaymentMethod(
+          id: 'mobile',
+          name: 'Mobile banking (bKash/Nagad)',
+          icon: Icons.smartphone_outlined,
+        ).toMap(),
+        'card': const PaymentMethod(id: 'card', name: 'Card', icon: Icons.credit_card_outlined).toMap(),
+      };
+
+  Map<String, dynamic> _defaultContributionTypes() => {
+        'regular': const ContributionType(
+          id: 'regular',
+          name: 'Regular',
+          description: 'Recurring monthly share',
+          icon: Icons.repeat_rounded,
+        ).toMap(),
+        'extra': const ContributionType(
+          id: 'extra',
+          name: 'Extra',
+          description: 'One-off additional amount',
+          icon: Icons.add_circle_outline_rounded,
+        ).toMap(),
+        'occasion': const ContributionType(
+          id: 'occasion',
+          name: 'Occasion',
+          description: 'Gifts, festivals, special events',
+          icon: Icons.celebration_rounded,
+        ).toMap(),
+      };
+
+  Map<String, dynamic> _defaultTxKindConfigs() => {
+        'purchase': const TxKindConfig(
+          id: 'purchase',
+          name: 'Purchase',
+          description: 'Money spent from a project fund',
+          icon: Icons.shopping_cart_rounded,
+          enabled: true,
+        ).toMap(),
+        'contribution': const TxKindConfig(
+          id: 'contribution',
+          name: 'Contribution',
+          description: 'Money paid in by a contributor',
+          icon: Icons.arrow_downward_rounded,
+          enabled: true,
+        ).toMap(),
+        'transfer': const TxKindConfig(
+          id: 'transfer',
+          name: 'Transfer',
+          description: 'Move funds between accounts or wallets',
+          icon: Icons.swap_horiz_rounded,
+          enabled: true,
+        ).toMap(),
+        'refund': const TxKindConfig(
+          id: 'refund',
+          name: 'Refund',
+          description: 'Money returned for a prior purchase',
+          icon: Icons.replay_rounded,
+          enabled: false,
+        ).toMap(),
+      };
+
+  // ---- Local demo seed (no Firebase project registered for this
+  // platform) — unchanged from the original in-memory prototype. --------
+
+  void _seedLocalDemo() {
+    currentUser = const AppUser(id: 'u1', name: 'Shanto', email: 'shanto@example.com');
+
     categories.addAll({
       'fish': const Category(id: 'fish', name: 'Fish & meat', icon: Icons.set_meal_rounded),
       'rice': const Category(

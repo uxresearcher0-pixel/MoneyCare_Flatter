@@ -5,6 +5,9 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Applies google-services.json (committed alongside this file) to generate
+    // the Firebase config Firebase.initializeApp() picks up natively.
+    id("com.google.gms.google-services")
 }
 
 // Release signing: reads from android/key.properties (local dev — the file

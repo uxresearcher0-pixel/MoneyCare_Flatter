@@ -1,12 +1,29 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/app_theme.dart';
+// `firebaseEnabled` is declared in app_data.dart (its doc comment explains
+// what it gates) — set here, right after we know whether Firebase actually
+// initialized, before AppData's constructor ever runs.
 import 'data/providers/app_data.dart';
+import 'firebase_options.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    try {
+      await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+      firebaseEnabled = true;
+    } catch (_) {
+      // No network at first launch, misconfigured project, etc. — fall back
+      // to local-only mode rather than a blank crash screen.
+      firebaseEnabled = false;
+    }
+  }
   runApp(const ProviderScope(child: MoneyCareApp()));
 }
 
